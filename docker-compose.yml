@@ -1,0 +1,38 @@
+version: '3.7'
+x-common: &common
+    stdin_open: true
+    tty: true
+    network_mode: "host"
+    volumes:
+        - ${VOLUME_DIRECTORY}:/home/me/volume
+    environment:
+        - COLUMNS
+        - LINES
+services:
+    base:
+        build:
+            context: ./base
+        image: base
+        <<: *common
+    int:
+        build:
+            context: ./int
+        image: int
+        <<: *common
+    mob:
+        build:
+            context: ./mob
+        image: mob
+        privileged: true
+        <<: *common
+    web:
+        build:
+            context: ./web
+        image: web
+        <<: *common
+    wifi:
+        build:
+            context: ./wifi
+        image: wifi
+        privileged: true
+        <<: *common
