@@ -16,14 +16,13 @@ An Arch package is available at https://github.com/demivi/PKGBUILDs
 
 If you don't want to use the repository, copy and paste this into your terminal:
 ```
-git clone https://github.com/demivi/cpw.git && \
-cd cpw && \
+wget https://raw.githubusercontent.com/demivi/PKGBUILDs/master/cpw/PKGBUILD && \
 makepkg -si
 ```
 
 ### Other distros
 
-As root, clone the repository into /usr/lib/ and create a soft link to cpw.sh in /usr/bin; cpw.sh needs to be executable. You can remove the .git directory and the PKGBUILD file. Make sure only root has write access to every file.
+You can clone the repository and put cpw.sh in your PATH. Make sure only root has write access to every file.
 
 Dependencies: docker, docker-compose, bash
 
