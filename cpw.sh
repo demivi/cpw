@@ -38,6 +38,20 @@ update_image () {
   fi
 }
 
+build_image () {
+  if nc -zw2 google.com 443; then
+
+    if [ "$1" != "base" ]; then
+      docker-compose build --pull base
+    else
+      docker-compose build "$1"
+    fi
+  else
+    echo "Can't build without internet access"
+    exit 1
+  fi
+}
+
 do_ls () {
   docker-compose config
   services=$(docker-compose config --services)
@@ -77,16 +91,16 @@ do_run () {
     else
       echo "This service does not have an image yet, creating..."
 
-      # Check if base exists, if yes update it, if no build it
+      #Check if base exists, if yes update it, if no build it
       if $(docker images | grep -q "^base\s"); then
-        update_image "base"
+        update_image base
       else
-        docker-compose build --pull base
+        build_image base
       fi
 
       # Build service image once base has been created/updated
       if [ "$2" != "base" ]; then
-        docker-compose build "$2"
+        build_image "$2"
       fi
 
       exec docker-compose run --rm "$2"
@@ -130,7 +144,7 @@ do_edit () {
     echo
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-      docker-compose build "$2"
+      build_image "$2"
 
       if [ "$2" = "base" ]; then
         echo "#########################################################################"
