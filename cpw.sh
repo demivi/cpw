@@ -91,7 +91,7 @@ do_run () {
     else
       echo "This service does not have an image yet, creating..."
 
-      #Check if base exists, if yes update it, if no build it
+      #Check if base exists, if it does update it, if not build it
       if $(docker images | grep -q "^base\s"); then
         update_image base
       else
@@ -181,6 +181,11 @@ case "$1" in
     ;;
 
   *)
-    echo "Usage: $0 {ls|run|rm|rerun|edit} <service>"
+    echo "Usage: $0 {ls|run|rm|rerun|edit} <service>
+    -ls: list services and check which of them have existing images
+    -run: start a new service; will build or update images if necessary
+    -rm: remove a service image
+    -rerun: shortcut to rm then run
+    -edit: edit existing service; give no argument to edit compose file"
     exit 1
 esac
