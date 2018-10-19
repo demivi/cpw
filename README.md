@@ -24,7 +24,7 @@ makepkg -si
 
 You can clone the repository and put cpw.sh in your PATH. Make sure only root has write access to every file.
 
-Dependencies: docker, docker-compose, bash
+Dependencies: docker, docker-compose, bash, netcat
 
 ## Usage
 
