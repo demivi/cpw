@@ -5,7 +5,7 @@ set -e
 # Set the number of days for an image to be detected as expired
 # Can only take values between 2 and 13
 # Otherwise, the date detection code needs to be modified
-readonly EXPIRATION=6
+export EXPIRATION=6
 
 export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
 
@@ -25,13 +25,17 @@ if [ $(systemctl is-active docker) = "inactive" ]; then
 fi
 
 update_image () {
-  echo "Updating $1"
-  docker run -tid --name update "$1"
-  docker exec -ti update bash -c "pkgfile -u" &
-  docker exec -ti update bash -c "pacman -Syu --noconfirm"
-  docker commit update "$1"
-  docker stop update
-  docker rm update
+  if nc -zw2 google.com 443; then
+    echo "Updating $1"
+    docker run -tid --name update "$1"
+    docker exec -ti update bash -c "pkgfile -u" &
+    docker exec -ti update bash -c "pacman -Syu --noconfirm"
+    docker commit update "$1"
+    docker stop update
+    docker rm update
+  else
+    echo "You do not seem to have Internet access, skipping update"
+  fi
 }
 
 do_ls () {
@@ -59,7 +63,11 @@ do_run () {
       echo "An image already exists for this service: "$image
 
       # If image is older than $EXPIRATION days, update it
-      expired=$(echo "$images" | awk '$4=="months" || $4=="weeks" || ($3>$EXPIRATION  && $4=="days")')
+      expired=$(echo "$image" | awk '$4=="months" || 
+                                     $4=="weeks" || 
+                                     ($3>ENVIRON["EXPIRATION"]  && 
+                                      $4=="days")')
+
       if [ -n "$expired" ]; then
         echo "$2 is more than $EXPIRATION days old, updating..."
         update_image "$2"
