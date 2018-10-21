@@ -29,7 +29,7 @@ RUN echo $'\n[archstrike]\nServer = https://mirror.archstrike.org/$arch/$repo' >
     sed -i 's_Server = https://mirror.archstrike.org/$arch/$repo_Include = /etc/pacman.d/archstrike-mirrorlist_' /etc/pacman.conf && \
     pacman -Syy
 
-# Setup acr repository
+# Setup mcar repository
 RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/demivi/PKGBUILDs/releases/download/current/' /etc/pacman.conf && \
     pacman -Sy
 
