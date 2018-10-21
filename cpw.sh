@@ -65,6 +65,13 @@ do_run () {
     chown "$SUDO_USER" "$VOLUME_DIRECTORY"
   fi
 
+  if [ -z $(docker-compose config --services | grep "$2") ]; then
+    echo "This service does not exist"
+    echo "Run one of these services or create a new one:"
+    docker-compose config --services
+    exit 1
+  fi
+
   running=$(docker-compose ps "$2" | grep Up | awk '{print $1}')
 
   if [ -n "$running" ]; then
