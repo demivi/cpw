@@ -53,9 +53,10 @@ build_image () {
 }
 
 do_ls () {
-  docker-compose config
+  echo "Here are the existing services:"
+  docker-compose config --services
+  echo "Here are the images currently existing for these services:"
   services=$(docker-compose config --services)
-  echo "Here are the images corresponding to Docker Compose services:"
   docker images | grep "^$services\s"
 }
 
@@ -86,7 +87,7 @@ do_run () {
       # If image is older than $EXPIRATION days, update it
       expired=$(echo "$image" | awk '$4=="months" || 
                                      $4=="weeks" || 
-                                     ($3>ENVIRON["EXPIRATION"]  && 
+                                     ($3>=ENVIRON["EXPIRATION"]  && 
                                       $4=="days")')
 
       if [ -n "$expired" ]; then
