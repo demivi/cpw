@@ -41,8 +41,8 @@ update_image () {
 build_image () {
   if nc -zw2 google.com 443; then
 
-    if [ "$1" != "base" ]; then
-      docker-compose build --pull base
+    if [ "$2" = "pull" ]; then
+      docker-compose build --pull "$1"
     else
       docker-compose build "$1"
     fi
@@ -95,7 +95,7 @@ do_run () {
       if $(docker images | grep -q "^base\s"); then
         update_image base
       else
-        build_image base
+        build_image base pull
       fi
 
       # Build service image once base has been created/updated
