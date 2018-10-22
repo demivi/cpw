@@ -25,6 +25,9 @@ services:
         image: mob
         privileged: true
         <<: *common
+        volumes:
+            - ${VOLUME_DIRECTORY}:/home/me/volume
+            - /dev/bus/usb:/dev/bus/usb
     web:
         build:
             context: ./web
