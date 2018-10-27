@@ -66,20 +66,20 @@ do_run () {
     chown "$SUDO_USER" "$VOLUME_DIRECTORY"
   fi
 
-  if [ -z $(docker-compose config --services | grep "$2") ]; then
+  if [ -z $(docker-compose config --services | grep "$1") ]; then
     echo "This service does not exist"
     echo "Run one of these services or create a new one:"
     docker-compose config --services
     exit 1
   fi
 
-  running=$(docker-compose ps "$2" | grep Up | awk '{print $1}')
+  running=$(docker-compose ps "$1" | grep Up | awk '{print $1}')
 
   if [ -n "$running" ]; then
     echo "$running is running, spawning a shell..."
     exec docker exec -ti $running bash
   else
-    image=$(docker images | grep "^$2\s" | awk '{print $1, $3, $4, $5, $7}')
+    image=$(docker images | grep "^$1\s" | awk '{print $1, $3, $4, $5, $7}')
 
     if [ -n "$image" ]; then
       echo "An image already exists for this service: "$image
@@ -91,11 +91,11 @@ do_run () {
                                       $4=="days")')
 
       if [ -n "$expired" ]; then
-        echo "$2 is more than $EXPIRATION days old, updating..."
-        update_image "$2"
+        echo "$1 is more than $EXPIRATION days old, updating..."
+        update_image "$1"
       fi
 
-      exec docker-compose run --rm "$2"
+      exec docker-compose run --rm "$1"
     else
       echo "This service does not have an image yet, creating..."
 
@@ -107,17 +107,17 @@ do_run () {
       fi
 
       # Build service image once base has been created/updated
-      if [ "$2" != "base" ]; then
-        build_image "$2"
+      if [ "$1" != "base" ]; then
+        build_image "$1"
       fi
 
-      exec docker-compose run --rm "$2"
+      exec docker-compose run --rm "$1"
     fi
   fi
 }
 
 do_rm () {
-  if [ "$2" = "base" ]; then
+  if [ "$1" = "base" ]; then
     services=$(docker-compose config --services)
 
     if docker images | grep "^$services\s" | grep -v "^base\s"; then
@@ -135,13 +135,8 @@ do_rm () {
     fi
   fi
 
-  docker-compose rm "$2"
-  docker rmi "$2"
-}
-
-do_rerun () {
-  do_rm "$@"
-  do_run "$@"
+  docker-compose rm "$1"
+  docker rmi "$1"
 }
 
 do_edit () {
@@ -173,27 +168,33 @@ case "$1" in
     ;;
 
   run)
-    do_run "$@"
+    do_run "$2"
     ;;
 
   rm)
-    do_rm "$@"
+    do_rm "$2"
     ;;
 
   rerun)
-    do_rerun "$@"
+    do_rm "$2"
+    do_run "$2"
     ;;
 
   edit)
-    do_edit "$@"
+    do_edit "$1" "$2"
+    ;;
+
+  update)
+    update_image "$2"
     ;;
 
   *)
-    echo "Usage: $0 {ls|run|rm|rerun|edit} <service>
+    echo "Usage: $0 {ls|run|rm|rerun|edit|update} <service>
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
     -rm: remove a service image
     -rerun: shortcut to rm then run
-    -edit: edit existing service; give no argument to edit compose file"
+    -edit: edit existing service; give no argument to edit compose file
+    -update: manually update service"
     exit 1
 esac
