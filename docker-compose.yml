@@ -1,27 +1,26 @@
 version: '3.7'
+
 x-common: &common
     stdin_open: true
     tty: true
-    network_mode: "host"
+    network_mode: host
     volumes:
         - ${VOLUME_DIRECTORY}:/home/me/volume
     environment:
         - COLUMNS
         - LINES
+
 services:
     base:
-        build:
-            context: ./base
+        build: ./base
         image: base
         <<: *common
     int:
-        build:
-            context: ./int
+        build: ./int
         image: int
         <<: *common
     mob:
-        build:
-            context: ./mob
+        build: ./mob
         image: mob
         privileged: true
         <<: *common
@@ -29,13 +28,11 @@ services:
             - ${VOLUME_DIRECTORY}:/home/me/volume
             - /dev/bus/usb:/dev/bus/usb
     web:
-        build:
-            context: ./web
+        build: ./web
         image: web
         <<: *common
     wifi:
-        build:
-            context: ./wifi
+        build: ./wifi
         image: wifi
         privileged: true
         <<: *common
