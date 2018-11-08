@@ -10,6 +10,9 @@ RUN useradd -m me && \
     mkdir /home/me/volume && \
     chown -R me. /home/me/volume
 
+# Get a list of mirrors from archlinux.org, change country to fit your needs
+RUN curl -s "https://www.archlinux.org/mirrorlist/?country=FR&protocol=https&use_mirror_status=on" | sed -e 's/^#Server/Server/' -e '/^#/d' > /etc/pacman.d/mirrorlist
+
 RUN pacman -Sy && \
     pacman -Rsn systemd --noconfirm && \
     pacman -Su --noconfirm && \
