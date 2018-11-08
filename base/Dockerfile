@@ -1,11 +1,5 @@
 FROM archlinux/base
 
-RUN locale-gen en_US.UTF-8
-
-ENV LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8
-
 RUN useradd -m me && \
     mkdir /home/me/volume && \
     chown -R me. /home/me/volume
