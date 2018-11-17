@@ -25,14 +25,17 @@ if [ $(systemctl is-active docker) = "inactive" ]; then
 fi
 
 update_image () {
+  if $(docker ps -a | grep -q "cpw_update"); then
+    docker rm cpw_update
+  fi
+
   if nc -zw2 google.com 443; then
     echo "Updating $1"
-    docker run -tid --name update "$1"
-    docker exec -ti update bash -c "pkgfile -u" &
-    docker exec -ti update bash -c "pacman -Syu --noconfirm"
-    docker commit update "$1"
-    docker stop update
-    docker rm update
+    sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
+    docker run -ti --name cpw_update "$1" bash -c "pacman -Syu --noconfirm"
+    docker stop cpw_update
+    docker commit --change='CMD ["/bin/bash"]' cpw_update "$1"
+    docker rm cpw_update
   else
     echo "You do not seem to have Internet access, skipping update"
   fi
