@@ -131,6 +131,7 @@ do_rm () {
 
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         docker-compose down --rmi all
+        docker rmi $(docker images -f “dangling=true” -q)
         return 0
       else
         exit 1
@@ -138,7 +139,6 @@ do_rm () {
     fi
   fi
 
-  docker-compose rm "$1"
   docker rmi "$1"
 }
 
