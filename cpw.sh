@@ -19,6 +19,15 @@ if [ $(systemctl is-active docker) = "inactive" ]; then
   fi
 fi
 
+check_service_existence () {
+  if [ -z $(docker-compose config --services | grep "$1") ]; then
+    echo "This service does not exist"
+    echo "Use one of these services or create a new one:"
+    docker-compose config --services
+    exit 1
+  fi
+}
+
 update_image () {
   if $(docker ps -a | grep -q "cpw_update"); then
     docker rm cpw_update
@@ -59,16 +68,11 @@ do_ls () {
 }
 
 do_run () {
+  check_service_existence "$1"
+
   if [ ! -d "$VOLUME_DIRECTORY" ] && [ $CREATE_VOLUME_DIRECTORY = true ]; then
     mkdir "$VOLUME_DIRECTORY"
     chown "$SUDO_USER" "$VOLUME_DIRECTORY"
-  fi
-
-  if [ -z $(docker-compose config --services | grep "$1") ]; then
-    echo "This service does not exist"
-    echo "Run one of these services or create a new one:"
-    docker-compose config --services
-    exit 1
   fi
 
   running=$(docker-compose ps "$1" | grep Up | awk '{print $1}')
@@ -117,6 +121,8 @@ do_run () {
 }
 
 do_rm () {
+  check_service_existence "$1"
+
   if [ "$1" = "base" ]; then
     services=$(docker-compose config --services)
 
@@ -141,6 +147,7 @@ do_rm () {
 
 do_edit () {
   if [ "$2" ]; then
+    check_service_existence "$2"
     "${EDITOR:-vim}" "$2"/Dockerfile
 
     read -p "Do you want to rebuild "$2" now? (y/N) " -n 1 -r
