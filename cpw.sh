@@ -200,7 +200,8 @@ case "$1" in
     ;;
 
   *)
-    echo "Usage: cpw {run|rm|rerun|edit|update} <service>
+    echo "
+Usage: cpw {run|rm|rerun|edit|update} <service>
    or: cpw {ls|edit|conf}
 
     -ls: list services and check which of them have existing images
@@ -209,6 +210,7 @@ case "$1" in
     -rerun: shortcut to rm then run
     -edit: edit existing service; give no argument to edit compose file
     -update: manually update service
-    -conf: change cpw configuration"
+    -conf: change cpw configuration
+    "
     exit 1
 esac
