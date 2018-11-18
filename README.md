@@ -2,7 +2,13 @@
 
 A ComPose Wrapper for simple Docker image management.
 
-I mainly made this script to manage my pentest tools by creating profiles for various engagement typologies and automating updates efficiently.
+I made this script mainly for the following reasons:
+- Organize my pentest tools by engagement typologies
+- Automate updates efficiently
+- Simplify Docker usage and image/container management
+
+I use it with my Arch Linux repository to allow full image update in one command:
+https://github.com/demivi/PKGBUILDs
 
 ## Installing
 
