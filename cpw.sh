@@ -2,12 +2,7 @@
 
 set -e
 
-# Set the number of days for an image to be detected as expired
-# Can only take values between 2 and 13
-# Otherwise, the date detection code needs to be modified
-export EXPIRATION=6
-
-export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
+source conf.sh
 
 if [ $EUID != 0 ]; then
     sudo "$0" "$@"
@@ -64,7 +59,7 @@ do_ls () {
 }
 
 do_run () {
-  if [ ! -d "$VOLUME_DIRECTORY" ]; then
+  if [ ! -d "$VOLUME_DIRECTORY" ] && [ $CREATE_VOLUME_DIRECTORY = true ]; then
     mkdir "$VOLUME_DIRECTORY"
     chown "$SUDO_USER" "$VOLUME_DIRECTORY"
   fi
@@ -93,7 +88,7 @@ do_run () {
                                      ($3>=ENVIRON["EXPIRATION"]  && 
                                       $4=="days")')
 
-      if [ -n "$expired" ]; then
+      if [ -n "$expired" ] && [ $ENABLE_AUTO_UPDATE = true ]; then
         echo "$1 is more than $EXPIRATION days old, updating..."
         update_image "$1"
       fi
@@ -104,7 +99,9 @@ do_run () {
 
       #Check if base exists, if it does update it, if not build it
       if $(docker images | grep -q "^base\s"); then
-        update_image base
+        if [ $ENABLE_AUTO_UPDATE = true ]; then
+          update_image base
+        fi
       else
         build_image base pull
       fi
@@ -191,13 +188,20 @@ case "$1" in
     update_image "$2"
     ;;
 
+  conf)
+    "${EDITOR:-vim}" conf.sh
+    ;;
+
   *)
-    echo "Usage: $0 {ls|run|rm|rerun|edit|update} <service>
+    echo "Usage: cpw {run|rm|rerun|edit|update} <service>
+   or: cpw {ls|edit|conf}
+
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
     -rm: remove a service image
     -rerun: shortcut to rm then run
     -edit: edit existing service; give no argument to edit compose file
-    -update: manually update service"
+    -update: manually update service
+    -conf: change cpw configuration"
     exit 1
 esac
