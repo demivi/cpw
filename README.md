@@ -38,13 +38,17 @@ Dependencies: docker, docker-compose, bash, netcat
 ## Usage
 
 ```
-cpw {ls|run|rm|rerun|edit} <service>
+Usage: cpw {run|rm|rerun|edit|update} <service>
+   or: cpw {ls|edit|conf}
 
--ls: list services and check which of them have existing images
--run: start a new service; will build or update images if necessary
--rm: remove a service image
--rerun: shortcut to rm then run
--edit: edit existing service; give no argument to edit compose file
+    -ls: list services and check which of them have existing images
+    -run: start a new service; will build or update images if necessary
+    -rm: remove a service image
+    -rerun: shortcut to rm then run
+    -edit: edit existing service; give no argument to edit compose file
+    -update: manually update service
+    -conf: change cpw configuration
+
 ```
 
 This repository contains profile examples to give you something to start with. Edits of existing Dockerfiles or of the docker-compose.yml file can be done with the edit command. If you want to make more structural changes (removing or creating entirely new profiles), you will have to do so manually.
