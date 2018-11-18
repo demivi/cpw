@@ -25,6 +25,7 @@ makepkg -si
 Clone the repository and make sure only root has write access to every file. Create a script in your $PATH that changes directory to where cpw.sh is located and executes it with the provided arguments.
 
 Here is an example:
+
 `/usr/bin/cpw`
 ```
 #!/bin/sh
