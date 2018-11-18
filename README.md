@@ -48,7 +48,6 @@ Usage: cpw {run|rm|rerun|edit|update} <service>
     -edit: edit existing service; give no argument to edit compose file
     -update: manually update service
     -conf: change cpw configuration
-
 ```
 
 This repository contains profile examples to give you something to start with. Edits of existing Dockerfiles or of the docker-compose.yml file can be done with the edit command. If you want to make more structural changes (removing or creating entirely new profiles), you will have to do so manually.
