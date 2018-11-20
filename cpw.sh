@@ -123,6 +123,10 @@ do_run () {
 do_rm () {
   check_service_existence "$1"
 
+  if $(docker ps -a | grep -q "cpw_update"); then
+    docker rm cpw_update
+  fi
+
   if [ "$1" = "base" ]; then
     services=$(docker-compose config --services)
 
