@@ -33,7 +33,7 @@ update_image () {
     docker rm cpw_update
   fi
 
-  if nc -zw2 google.com 443; then
+  if wget -q --spider google.com; then
     echo "Updating $1"
     sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
     docker run -ti --name cpw_update "$1" bash -c "pacman -Syu --noconfirm"
@@ -46,7 +46,7 @@ update_image () {
 }
 
 build_image () {
-  if nc -zw2 google.com 443; then
+  if wget -q --spider google.com; then
 
     if [ "$2" = "pull" ]; then
       docker-compose build --pull "$1"
