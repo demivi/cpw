@@ -35,10 +35,12 @@ update_image () {
 
   if wget -q --spider google.com; then
     echo "Updating $1"
+
+    current_cmd=$(docker inspect -f '{{.Config.Cmd}}' "$1" | sed 's/[][]//g')
     sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
     docker run -ti --name cpw_update "$1" bash -c "pacman -Syu --noconfirm"
     docker stop cpw_update
-    docker commit --change='CMD ["/bin/bash"]' cpw_update "$1"
+    docker commit -c "CMD [\"$current_cmd\"]" cpw_update "$1"
     docker rm cpw_update
   else
     echo "You do not seem to have Internet access, skipping update"
