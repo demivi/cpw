@@ -5,6 +5,7 @@ RUN pacman -Syu --noconfirm && \
         bettercap \
         empire \
         enum4linux \
+        iptables \
         metasploit \
         nmap \
         responder \

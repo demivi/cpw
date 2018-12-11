@@ -18,6 +18,7 @@ services:
     int:
         build: ./int
         image: int
+        privileged: true
         <<: *common
     mob:
         build: ./mob
