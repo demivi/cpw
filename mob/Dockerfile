@@ -13,6 +13,7 @@ RUN pacman -Syu --noconfirm && \
         jre8-openjdk \
         jtool \
         p7zip \
+        ripgrep \
         smali \
         zipalign \
     --noconfirm --needed

@@ -2,9 +2,12 @@ FROM base
 
 RUN pacman -Syu --noconfirm && \
     pacman -S \
+        aquatone \
         bettercap \
+        crackmapexec \
         empire \
         enum4linux \
+        impacket \
         iptables \
         metasploit \
         nmap \

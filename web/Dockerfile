@@ -7,6 +7,7 @@ RUN pacman -Syu --noconfirm && \
         nmap \
         rsmangler \
         sqlmap \
+        wafw00f \
     --noconfirm --needed
 
 RUN pacman -Scc --noconfirm
