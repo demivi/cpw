@@ -8,6 +8,7 @@ I made this script mainly for the following reasons:
 - Simplify Docker usage and image/container management
 
 I use it with my Arch Linux repository to allow full image update in one command:
+
 https://github.com/demivi/PKGBUILDs
 
 ## Installing
@@ -39,13 +40,14 @@ cd /usr/lib/cpw/
 exec /usr/lib/cpw/cpw.sh "$@"
 ```
 
-Dependencies: docker, docker-compose, bash, netcat
+Dependencies: docker, docker-compose, bash, wget
 
 ## Usage
 
 ```
 Usage: cpw {run|rm|rerun|edit|update} <service>
-   or: cpw {ls|edit|conf}
+   or: cpw {ls|edit|conf|script}
+   or: cpw script {pre|post}
 
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
@@ -54,6 +56,9 @@ Usage: cpw {run|rm|rerun|edit|update} <service>
     -edit: edit existing service; give no argument to edit compose file
     -update: manually update service
     -conf: change cpw configuration
+    -script: edit pre and post docker-compose run scripts
 ```
 
 This repository contains profile examples to give you something to start with. Edits of existing Dockerfiles or of the docker-compose.yml file can be done with the edit command. If you want to make more structural changes (removing or creating entirely new profiles), you will have to do so manually.
+
+This script provides an auto-update mechanism as well a scriptable interface to create service specific behaviors before or after a container is ran.

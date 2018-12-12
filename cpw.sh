@@ -61,6 +61,12 @@ build_image () {
   fi
 }
 
+run_container () {
+  source pre.sh "$1"
+  docker-compose run --rm "$1"
+  source post.sh "$1"
+}
+
 do_ls () {
   echo "Here are the existing services:"
   docker-compose config --services
@@ -71,11 +77,6 @@ do_ls () {
 
 do_run () {
   check_service_existence "$1"
-
-  if [ ! -d "$VOLUME_DIRECTORY" ] && [ $CREATE_VOLUME_DIRECTORY = true ]; then
-    mkdir "$VOLUME_DIRECTORY"
-    chown "$SUDO_USER" "$VOLUME_DIRECTORY"
-  fi
 
   running=$(docker-compose ps "$1" | grep Up | awk '{print $1}')
 
@@ -99,7 +100,7 @@ do_run () {
         update_image "$1"
       fi
 
-      exec docker-compose run --rm "$1"
+      run_container "$1"
     else
       echo "This service does not have an image yet, creating..."
 
@@ -117,7 +118,7 @@ do_run () {
         build_image "$1"
       fi
 
-      exec docker-compose run --rm "$1"
+      run_container "$1"
     fi
   fi
 }
@@ -167,11 +168,19 @@ do_edit () {
         echo "NOTE: Use 'rerun <service>' to cascade changes to a service built on base"
         echo "#########################################################################"
       else
-        exec docker-compose run --rm "$2"
+        run_container "$2"
       fi
     fi
   else
     "${EDITOR:-vim}" docker-compose.yml
+  fi
+}
+
+do_script () {
+  if [ "$2" = "pre" ] || [ "$2" = "post" ]; then
+    "${EDITOR:-vim}" "$2".sh
+  else
+    "${EDITOR:-vim}" pre.sh post.sh
   fi
 }
 
@@ -205,10 +214,15 @@ case "$1" in
     "${EDITOR:-vim}" conf.sh
     ;;
 
+  script)
+    do_script "$1" "$2"
+    ;;
+
   *)
     echo "
 Usage: cpw {run|rm|rerun|edit|update} <service>
-   or: cpw {ls|edit|conf}
+   or: cpw {ls|edit|conf|script}
+   or: cpw script {pre|post}
 
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
@@ -217,6 +231,7 @@ Usage: cpw {run|rm|rerun|edit|update} <service>
     -edit: edit existing service; give no argument to edit compose file
     -update: manually update service
     -conf: change cpw configuration
+    -script: edit pre and post docker-compose run scripts
     "
     exit 1
 esac
