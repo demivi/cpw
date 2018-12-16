@@ -35,13 +35,7 @@ update_image () {
 
   if wget -q --spider google.com; then
     echo "Updating $1"
-
-    current_cmd=$(docker inspect -f '{{.Config.Cmd}}' "$1" | sed 's/[][]//g')
-    sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
-    docker run -ti --name cpw_update "$1" bash -c "pacman -Syu --noconfirm"
-    docker stop cpw_update
-    docker commit -c "CMD [\"$current_cmd\"]" cpw_update "$1"
-    docker rm cpw_update
+    source update.sh "$1"
   else
     echo "You do not seem to have Internet access, skipping update"
   fi
@@ -177,7 +171,9 @@ do_edit () {
 }
 
 do_script () {
-  if [ "$2" = "pre" ] || [ "$2" = "post" ]; then
+  if [ "$2" = "pre" ] ||
+     [ "$2" = "post" ] ||
+     [ "$2" = "update" ]; then
     "${EDITOR:-vim}" "$2".sh
   else
     "${EDITOR:-vim}" pre.sh post.sh
@@ -222,7 +218,7 @@ case "$1" in
     echo "
 Usage: cpw {run|rm|rerun|edit|update} <service>
    or: cpw {ls|edit|conf|script}
-   or: cpw script {pre|post}
+   or: cpw script {pre|post|update}
 
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
@@ -231,7 +227,7 @@ Usage: cpw {run|rm|rerun|edit|update} <service>
     -edit: edit existing service; give no argument to edit compose file
     -update: manually update service
     -conf: change cpw configuration
-    -script: edit pre and post docker-compose run scripts
+    -script: edit update and pre/post docker-compose run scripts
     "
     exit 1
 esac

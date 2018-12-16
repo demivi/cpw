@@ -47,7 +47,7 @@ Dependencies: docker, docker-compose, bash, wget
 ```
 Usage: cpw {run|rm|rerun|edit|update} <service>
    or: cpw {ls|edit|conf|script}
-   or: cpw script {pre|post}
+   or: cpw script {pre|post|update}
 
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
@@ -56,7 +56,7 @@ Usage: cpw {run|rm|rerun|edit|update} <service>
     -edit: edit existing service; give no argument to edit compose file
     -update: manually update service
     -conf: change cpw configuration
-    -script: edit pre and post docker-compose run scripts
+    -script: edit update and pre/post docker-compose run scripts
 ```
 
 This repository contains profile examples to give you something to start with. Edits of existing Dockerfiles or of the docker-compose.yml file can be done with the edit command. If you want to make more structural changes (removing or creating entirely new profiles), you will have to do so manually.
