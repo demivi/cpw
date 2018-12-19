@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 source conf.sh
 
 if [ $EUID != 0 ]; then
