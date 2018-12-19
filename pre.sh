@@ -28,6 +28,6 @@ fi
 
 # Firewall conf example for internal network pentests
 #if [ "$1" = "int" ]; then
-#  iptables -I INPUT 2 -p tcp -m multiport --dports 21,25,53,80,88,110,139,143,389,443,445,587,1433,4444 -j ACCEPT
+#  iptables -I INPUT 2 -p tcp -m multiport --dports 21,25,53,80,88,110,139,143,389,443,445,587,1433,3141,4444 -j ACCEPT
 #  iptables -I INPUT 2 -p udp -m multiport --dports 53,88,137,138,5353,5355 -j ACCEPT
 #fi
