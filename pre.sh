@@ -17,14 +17,28 @@ if [ ! -d "$VOLUME_DIRECTORY" ]; then
   chown "$SUDO_USER" "$VOLUME_DIRECTORY"
 fi
 
+# You can use this type of function to set custom cgroups for a
+# given container. This example will remove restrictions on all USB
+# devices for the container. This will allow you to use adb without
+# starting containers in privileged mode for instance.
+# You would still need to bind /dev/bus/usb as a volume though,
+# which can be done by changing your docker-compose.yml (cpw edit).
+set_cgroup () {
+  major_number="$(ls -l /dev/bus/usb/001/001 | awk '{print $5}' | tr -d ',')"
+  container_id="$(docker ps -qf "name=$1" --no-trunc)"
+  echo "c $major_number:* rwm" > /sys/fs/cgroup/devices/docker/$container_id/devices.allow
+}
+
 # Wifi AP creation example for mobile application pentests
-#if [ "$1" = "mob" ]; then
-#  create_ap --daemon <wifi_interface> <eth_interface> <ap_name> <ap_passphrase> > /dev/null
-#
-#  iptables -I INPUT 2 -p tcp --dport 8080 -s 192.168.12.0/24 -j ACCEPT
-#  iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
-#  iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
-#fi
+if [ "$1" = "mob" ]; then
+  #create_ap --daemon <wifi_interface> <eth_interface> <ap_name> <ap_passphrase> > /dev/null
+
+  #iptables -I INPUT 2 -p tcp --dport 8080 -s 192.168.12.0/24 -j ACCEPT
+  #iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
+  #iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
+
+  sleep 1 && set_cgroup "$1" &
+fi
 
 # Firewall conf example for internal network pentests
 #if [ "$1" = "int" ]; then

@@ -1,14 +1,13 @@
 version: '3.7'
 
 x-common: &common
-    stdin_open: true
-    tty: true
     network_mode: host
     volumes:
         - ${VOLUME_DIRECTORY}:/home/me/volume
     environment:
         - COLUMNS
         - LINES
+        - EDITOR
 
 services:
     base:
@@ -18,12 +17,12 @@ services:
     int:
         build: ./int
         image: int
-        privileged: true
+        cap_add:
+            - NET_ADMIN
         <<: *common
     mob:
         build: ./mob
         image: mob
-        privileged: true
         <<: *common
         volumes:
             - ${VOLUME_DIRECTORY}:/home/me/volume
@@ -35,5 +34,6 @@ services:
     wifi:
         build: ./wifi
         image: wifi
-        privileged: true
+        cap_add:
+            - NET_ADMIN
         <<: *common
