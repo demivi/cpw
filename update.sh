@@ -2,10 +2,12 @@
 
 # The name of the docker-compose service cpw is about to update is 
 # passed to this script as its first argument.
-# You can thus have custom update commands for each of your services.
+# You can thus have custom update commands for each of your services,
+# disable autoupdate for some of them or only update if you meet some
+# condition like having access to a private repository.
 
-# Note: You should stick with the image name "cpw_update" as it will allow
-# cpw to cleanup leftover images in case updates are interrupted.
+# Cleanup remaining container if the user hits CTRL+C during the update.
+trap 'docker rm cpw_update' SIGINT
 
 # This gets the current image CMD to reset it later when commiting.
 current_cmd=$(docker inspect -f '{{.Config.Cmd}}' "$1" | sed 's/[][]//g')
@@ -18,8 +20,7 @@ sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
 
 # This is the update command. The image CMD is changed to allow
 # update interruptions by hitting CTRL+C. Note that if you hit CTRL+C
-# here, the container and cpw will stop, and none of the following 
-# commands will be executed.
+# here, only the trap command above will be executed.
 docker run -ti --name cpw_update "$1" bash -c "pacman -Syu --noconfirm"
 
 # This commits the updated container and resets CMD
