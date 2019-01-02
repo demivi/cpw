@@ -16,5 +16,3 @@ RUN pacman -Syu --noconfirm && \
 
 # Empire specifics
 RUN echo "dB9hiWTPX3VTN0ljCXpm" | empire-setup
-
-RUN pacman -Scc --noconfirm

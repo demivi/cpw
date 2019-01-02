@@ -5,5 +5,3 @@ RUN pacman -Syu --noconfirm && \
         iproute2 \
         wifite \
     --noconfirm --needed
-
-RUN pacman -Scc --noconfirm

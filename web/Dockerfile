@@ -9,5 +9,3 @@ RUN pacman -Syu --noconfirm && \
         sqlmap \
         wafw00f \
     --noconfirm --needed
-
-RUN pacman -Scc --noconfirm

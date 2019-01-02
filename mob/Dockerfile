@@ -17,5 +17,3 @@ RUN pacman -Syu --noconfirm && \
         smali \
         zipalign \
     --noconfirm --needed
-
-RUN pacman -Scc --noconfirm

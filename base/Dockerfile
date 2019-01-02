@@ -32,6 +32,4 @@ RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/de
 
 RUN pkgfile -u
 
-RUN pacman -Scc --noconfirm
-
 WORKDIR /home/me/volume
