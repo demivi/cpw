@@ -2,7 +2,6 @@ FROM base
 
 RUN pacman -Syu --noconfirm && \
     pacman -S \
-        aquatone \
         bettercap \
         crackmapexec \
         empire \
