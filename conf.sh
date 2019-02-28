@@ -17,3 +17,8 @@ export EXPIRATION=6
 # docker-compose.yml and cpw pre/post docker-compose run scripts.
 # You can make as many of these variables as you like.
 export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
+
+# This is an array of the default arguments for the docker-compose
+# run command. You can override those in the pre script if you want
+# different arguments for some services.
+RUN_ARGS=( "--service-ports" "--rm" )

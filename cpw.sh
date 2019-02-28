@@ -51,7 +51,7 @@ build_image () {
 
 run_container () {
   source pre.sh "$1"
-  docker-compose run --service-ports --rm "$1"
+  docker-compose run "${RUN_ARGS[@]}" "$1"
   source post.sh "$1"
 }
 
