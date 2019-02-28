@@ -7,7 +7,6 @@ RUN pacman -Syu --noconfirm && \
         empire \
         enum4linux \
         impacket \
-        iptables \
         metasploit \
         nmap \
         responder \
