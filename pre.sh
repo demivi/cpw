@@ -31,11 +31,25 @@ set_cgroup () {
 
 # Wifi AP creation example for mobile application pentests
 if [ "$1" = "mob" ]; then
-  #create_ap --daemon <wifi_interface> <eth_interface> <ap_name> <ap_passphrase> > /dev/null
-
-  #iptables -I INPUT 2 -p tcp --dport 8080 -s 192.168.12.0/24 -j ACCEPT
-  #iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
-  #iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
+#  AP_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12 ; echo '')
+#  echo "AP password: $AP_PASSWORD"
+#  create_ap --daemon <wifi_interface> <eth_interface> <ap_name> "$AP_PASSWORD" > /dev/null
+#
+#  # This part of the script will autoconfigure your AP on a plugged
+#  # in phone. It requires adb on the host and the following app to
+#  # be installed: https://github.com/steinwurf/adb-join-wifi
+#  if [ -z "$(adb devices | grep 'device$')" ]; then
+#    echo "Could not access device, you need to unlock it and allow debugging"
+#    read -p "Press enter to continue" -n 1 -r
+#    echo
+#  fi
+#
+#  adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity -e ssid <ap_name> -e password_type WPA -e password "$AP_PASSWORD"
+#  adb kill-server
+#
+#  iptables -I INPUT 2 -p tcp --dport 8080 -s 192.168.12.0/24 -j ACCEPT
+#  iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
+#  iptables -t nat -A PREROUTING -p tcp -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
 
   sleep 1 && set_cgroup "$1" &
 fi
