@@ -7,7 +7,7 @@ RUN useradd -m me && \
 # Get a list of mirrors from archlinux.org, change country to fit your needs
 RUN curl -s "https://www.archlinux.org/mirrorlist/?country=FR&protocol=https&use_mirror_status=on" | sed -e 's/^#Server/Server/' -e '/^#/d' > /etc/pacman.d/mirrorlist
 
-RUN pacman -Syu && \
+RUN pacman -Syu --noconfirm && \
     pacman -S awk file git pkgfile tar vim wget which --noconfirm
 
 # Setup Archstrike repository (https://archstrike.org/wiki/setup)
