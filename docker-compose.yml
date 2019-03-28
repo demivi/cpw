@@ -14,6 +14,18 @@ services:
         build: ./base
         image: base
         <<: *common
+    burp:
+        build: ./burp
+        image: burp
+        <<: *common
+        environment:
+            - DISPLAY
+        volumes:
+            - /home/$SUDO_USER/.Xauthority:/root/.Xauthority:ro
+    ext:
+        build: ./ext
+        image: ext
+        <<: *common
     int:
         build: ./int
         image: int

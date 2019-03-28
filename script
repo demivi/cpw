@@ -1,0 +1,247 @@
+#!/bin/bash
+
+######################################!!!!######################################
+# This script alows you to hook into parts of cpw by running custom code
+# triggered by different events.
+#
+# By default, it takes 2 arguments:
+#   $1 - the name of the event
+#   $2 - the name of the docker-compose service
+#
+# But cpw also passes any extra arguments you give it alowing you to
+# create additional custom conditions.
+#
+# This script also contains cpw configuration variables in the init section.
+######################################!!!!######################################
+
+# You can use this type of function to set custom cgroups for a given container.
+# This example will remove restrictions on all USB devices for the container.
+# This will allow you to use adb without starting containers in privileged mode
+# for instance. You would still need to bind /dev/bus/usb as a volume though,
+# which can be done by changing your docker-compose.yml (cpw edit).
+set_cgroup () {
+  major_number="$(ls -l /dev/bus/usb/001/001 | awk '{print $5}' | tr -d ',')"
+  container_id="$(docker ps -qf "name=$1" --no-trunc)"
+  echo "c $major_number:* rwm" > \
+      /sys/fs/cgroup/devices/docker/$container_id/devices.allow
+}
+
+######################################!!!!######################################
+# Runs at every cpw startup 
+######################################!!!!######################################
+if [[ "$1" = "init" ]]; then
+
+    # Check if the Docker daemon is running, if not try to start it
+    if [[ $(systemctl is-active docker) = "inactive" ]]; then
+        echo "Docker is not running, attempting to start..."
+        systemctl start docker
+
+        if [[ $(systemctl is-active docker) = "inactive" ]]; then
+            echo "Failed to start Docker daemon, please start it manually"
+            exit 1
+        fi
+    fi
+
+    # Default editor to use when editing this script, docker-compose.yml or
+    # Dockerfiles
+    EDITOR=vim
+
+    # This controls whether or not cpw will try to update whenever you run 'cpw
+    # run <service>' if the image is older than the configured max age.
+    AUTO_UPDATE=true
+    
+    # Set the maximum number of days before an image gets updated if auto-update
+    # is enabled.
+    MAX_AGE=6
+    
+    # The number of days a parent image should be rebuilt after. This check is
+    # triggered whenever the auto-update kicks-in.
+    PARENT_MAX_AGE=22
+    
+    # This is an example of a volume variable which can be used by
+    # docker-compose.yml and in this script. It needs to be exported to be
+    # visible by docker-compose.
+    export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
+    
+    # This is an array of the default arguments for the docker-compose run
+    # command. Removing '--rm' is not advised as the created container with not
+    # benefit from the cpw update system.
+    RUN_ARGS=( "--rm" )
+
+    # This is an array of the default arguments for the docker-compose build
+    # command. Removing '--force-rm' is not advised because it will leave
+    # containers from failed builds behind.
+    BUILD_ARGS=( "--force-rm" "--no-cache" )
+
+    # Premptively creating your volume directories will allow you to set their
+    # permissions. If you let docker-compose create them they will be owned by
+    # root.
+    if [ ! -d "$VOLUME_DIRECTORY" ]; then
+        mkdir "$VOLUME_DIRECTORY"
+        chown "$SUDO_USER" "$VOLUME_DIRECTORY"
+    fi
+
+    # Here is a way you can override your default configuration based on
+    # service names.
+    if [[ "$2" = "burp" ]]; then
+        MAX_AGE=12
+    fi
+
+    # Here is an example of how you could change default run agruments for a
+    # given profile.
+    if [[ "$2" = "burp" ]]; then
+
+        # This will make the container run in detached mode.
+        RUN_ARGS=( "-d" )
+
+        # Because the '--rm' argument is ignored in detached mode, you might
+        # want to remove the container afterwards. This could for example be
+        # done the next time cpw runs for the same profile.
+        containers=$(docker ps -aqf ancestor="$3")
+
+        if [[ -n "$containers" ]]; then
+            for container in $containers; do
+                docker stop "$container"
+                docker rm "$container"
+            done
+        fi
+    fi
+
+    # Here is an example of BUILD_ARGS change with a custom cpw parameter.
+    if [[ "$3" = "cache" ]]; then
+        BUILD_ARGS=( "--force-rm" )
+    fi
+
+    # Add a flag to force update when running 'cpw run' or 'cpw update'.
+    if [[ "$3" = "-u" ]]; then
+        MAX_AGE=0
+    fi
+
+######################################!!!!######################################
+# Image update code
+######################################!!!!######################################
+elif [[ "$1" = "update" ]]; then
+    if wget -q -T 3 --spider google.com; then
+
+        # Cleanup remaining container if the user hits CTRL+C during the update.
+        trap 'docker rm cpw_update' SIGINT
+        
+        # This gets the current image CMD to reset it later when commiting.
+        current_cmd=$(docker inspect -f '{{.Config.Cmd}}' "$2" | \
+            sed 's/[][]//g' | cut -d " " -f 3-)
+        
+        # This is an example of how you could run a command in parallel to
+        # the update process. Note that this will be interrupted if it does
+        # not terminate before the main update, so only use this if you can
+        # afford the risk. This line is optionnal.
+        sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
+        
+        # This is the update command. The image CMD is changed to allow
+        # update interruptions by hitting CTRL+C. Note that if you hit CTRL+C
+        # here, only the trap command above will be executed, not the rest.
+        docker run -ti --name cpw_update "$2" bash -c "pacman -Syu --noconfirm"
+        
+        # This commits the updated container and resets the image CMD.
+        docker stop cpw_update
+        docker commit -c "CMD $current_cmd" cpw_update "$2"
+        docker rm cpw_update
+    else
+        echo "You do not seem to have Internet access, skipping update"
+    fi
+
+######################################!!!!######################################
+# Image build code
+######################################!!!!######################################
+elif [[ "$1" = "build" ]]; then
+    if wget -q -T 3 --spider google.com; then
+
+        # This is the command used every time an image needs to be (re)built.
+        docker-compose --log-level ERROR build "${BUILD_ARGS[@]}" "$2"
+    else
+        echo "Can't build without internet access"
+        exit 1
+    fi
+
+######################################!!!!######################################
+# Runs before every cpw run 
+######################################!!!!######################################
+elif [[ "$1" = "prerun" ]]; then
+
+    # Commands to run before the 'mob' service starts.
+    if [[ "$2" = "mob" ]]; then
+
+        # This sets a custom cgroup rule for the mobile pentest service.
+        sleep 1 && set_cgroup "$2" &
+
+        # This will create a wifi access point.
+        # It requires the create_ap script:
+        # https://github.com/oblique/create_ap
+        #AP_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
+        #echo "AP password: $AP_PASSWORD"
+        #create_ap --daemon \
+        #    <wifi_interface> \
+        #    <eth_interface> \
+        #    <ap_name> "$AP_PASSWORD" > /dev/null
+        
+        # This will autoconfigure your AP on a plugged in Android phone.
+        # It requires adb on the host and the following app to be installed:
+        # https://github.com/steinwurf/adb-join-wifi
+        #if [ -z "$(adb devices | grep 'device$')" ]; then
+        #    echo "Warning: Could not access Android device."
+        #    echo "You need to unlock it and allow debugging"
+        #    read -p "Press enter to continue" -n 1 -r
+        #    echo
+        #fi
+        #
+        #adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
+        #    -e ssid <ap_name> -e password_type WPA -e password "$AP_PASSWORD"
+        #adb kill-server
+        
+        # This is an example of how you could use custom cpw arguments. Unless
+        # you use 'cpw run mob noburp', AP traffic will not be forward to Burp.
+        #if [[ "$3" != "noburp" ]]; then
+        #    iptables -I INPUT 2 -p tcp \
+        #        -s 192.168.12.0/24 --dport 8080 -j ACCEPT
+        #    iptables -t nat -A PREROUTING -p tcp \
+        #        -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
+        #    iptables -t nat -A PREROUTING -p tcp \
+        #        -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
+        #fi
+    fi
+
+    # Firewall configuration example for internal network pentests
+    #if [ "$1" = "int" ]; then
+    #    iptables -I INPUT 2 -p tcp -m multiport --dports \
+    #        21,25,53,80,88,110,139,143,389,443,445,587,1433,3141,4444 -j ACCEPT
+    #    iptables -I INPUT 2 -p udp -m multiport --dports \
+    #        53,88,137,138,5353,5355 -j ACCEPT
+    #fi
+
+######################################!!!!######################################
+# Runs after every cpw run 
+######################################!!!!######################################
+elif [[ "$1" = "postrun" ]]; then
+
+    # Commands to run after the 'mob' service stops.
+    #if [[ "$2" = "mob" ]]; then
+    #    create_ap --stop <wifi_interface>
+    #    
+    #    if [[ "$3" != "noburp" ]]; then
+    #        iptables -D INPUT -p tcp \
+    #            -s 192.168.12.0/24 --dport 8080 -j ACCEPT
+    #        iptables -t nat -D PREROUTING -p tcp \
+    #            -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
+    #        iptables -t nat -D PREROUTING -p tcp \
+    #            -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
+    #    fi
+    #fi
+
+    # Internal network pentest cleanup example
+    #if [ "$1" = "int" ]; then
+    #    iptables -D INPUT -p tcp -m multiport --dports \
+    #        21,25,53,80,88,110,139,143,389,443,445,587,1433,3141,4444 -j ACCEPT
+    #    iptables -D INPUT -p udp -m multiport --dports \
+    #        53,88,137,138,5353,5355 -j ACCEPT
+    #fi
+    true
+fi

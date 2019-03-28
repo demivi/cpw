@@ -7,7 +7,7 @@ I made this script mainly for the following reasons:
 - Automate updates efficiently
 - Simplify Docker usage and image/container management
 
-I use it with my Arch Linux repository to allow full image update in one command:
+I use it with Archstrike and BlackArch repositories, as well as my Arch Linux repository to allow full image update in one command:
 
 https://github.com/demivi/PKGBUILDs
 
@@ -21,7 +21,7 @@ An Arch package is available at https://github.com/demivi/PKGBUILDs
 
 #### Manual installation
 
-If you don't want to use the repository, copy and paste this into your terminal:
+If you don't want to use the above repository, copy and paste this into your terminal:
 ```
 wget https://raw.githubusercontent.com/demivi/PKGBUILDs/master/cpw/PKGBUILD && \
 makepkg -si
@@ -40,25 +40,29 @@ cd /usr/lib/cpw/
 exec /usr/lib/cpw/cpw.sh "$@"
 ```
 
-Dependencies: docker, docker-compose, bash, wget
+Dependencies: bash, docker, docker-compose
+
+Optional: systemd, wget
 
 ## Usage
 
 ```
-Usage: cpw {run|rm|rerun|edit|update} <service>
-   or: cpw {ls|edit|conf|script}
-   or: cpw script {pre|post|update}
+Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
+   or: cpw {ls|edit|script}
 
     -ls: list services and check which of them have existing images
     -run: start a new service; will build or update images if necessary
     -rm: remove a service image
     -rerun: shortcut to rm then run
     -edit: edit existing service; give no argument to edit compose file
-    -update: manually update service
-    -conf: change cpw configuration
-    -script: edit update and pre/post docker-compose run scripts
+    -update: manually update service image
+    -build: manually build service image
+    -new: create new profile
+    -start: start a container if '--rm' has been removed from run arguments
+    -stop: stop a running container
+    -script: edit cpw script
 ```
 
-This repository contains profile examples to give you something to start with. Edits of existing Dockerfiles or of the docker-compose.yml file can be done with the edit command. If you want to make more structural changes (removing or creating entirely new profiles), you will have to do so manually.
+This repository contains profile examples as well as a cpw script to give you something to start with.
 
-This script provides an auto-update mechanism as well a scriptable interface to create service specific behaviors before or after a container is ran.
+This tool provides an auto-update mechanism as well a scriptable interface to create service specific behaviors triggered by different events. Use 'cpw script' to modify these behaviors.

@@ -1,0 +1,311 @@
+#!/bin/bash
+
+if [ $EUID != 0 ]; then
+    sudo "$0" "$@"
+    exit $?
+fi
+
+# Help string can be overridden in the cpw script
+help_string="
+Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
+   or: cpw {ls|edit|script}
+
+    -ls: list services and check which of them have existing images
+    -run: start a new service; will build or update images if necessary
+    -rm: remove a service image
+    -rerun: shortcut to rm then run
+    -edit: edit existing service; give no argument to edit compose file
+    -update: manually update service image
+    -build: manually build service image
+    -new: create new profile
+    -start: start a container if '--rm' has been removed from run arguments
+    -stop: stop a running container
+    -script: edit cpw script
+"
+
+source ./script init "${@:2}"
+
+check_image_existence () {
+    if ! $(docker images | grep "^$1\s" -q); then
+        echo "This image does not exist: $1"
+        echo "Use one of these images or create/pull a new one:"
+        docker images
+        exit 1
+    fi
+}
+
+check_service_existence () {
+    if ! $(docker-compose config --services | grep "^$1$" -q); then
+        echo "This service does not exist: $1"
+        echo "Use one of these services or create a new one:"
+        docker-compose config --services
+        exit 1
+    fi
+}
+
+do_ls () {
+    services=$(docker-compose config --services)
+    echo -e "\nHere are the existing services:"
+    echo "$services"
+    if [[ -n "$services" ]]; then
+    echo -e "\nHere are the images currently existing for these services:"
+        for service in $services; do
+            docker images | grep "^$service\s"
+        done
+        echo -e "\nHere are the containers running for these images:"
+        docker-compose ps
+        echo
+    fi
+}
+
+get_children () {
+    children=()
+
+    for image in $(docker images -q); do
+        if $(docker history $image | grep "$1" -q); then
+            children+=($image)
+        fi
+    done
+
+    children=("${children[@]:1}")
+}
+
+remove_containers () {
+    containers=$(docker ps -aqf ancestor="$1")
+
+    if [[ -n "$containers" ]]; then
+        echo "These containers are based on $1:"
+        for container in $containers; do
+            docker ps -a | grep $container
+        done
+        echo "They will need to be removed before cpw can proceed"
+
+        read -p "Do you want to remove them (y/N) " -n 1 -r
+        echo
+
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            for container in $containers; do
+                docker stop "$container"
+                docker rm "$container"
+            done
+        else
+            exit 1
+        fi
+    fi
+}
+
+perform_build () {
+    remove_containers "$1"
+    
+    image_ID=$(docker images -qf reference="$1")
+    
+    echo -e "\n\n################////////\nBuilding $1"
+    source ./script build "$@"
+    
+    # If the old image is not used anymore we remove it
+    get_children "$image_ID"
+    if [[ ${#children[@]} -eq 0 ]]; then
+        docker rmi "$image_ID"
+    fi
+}
+
+# Recursively update parent images by rebuilding them.
+update_parent () {
+    local repo_digests=$(docker inspect --format='{{.RepoDigests}}' "$1")
+    
+    # We only look for parents if we hit a local image
+    if [[ "$repo_digests" = '[]' ]]; then
+        parent=$(grep '^FROM' "$1"/Dockerfile | awk '{print $2}')
+        update_parent "$parent"
+    fi
+    
+    image_age=$(docker images --format '{{.CreatedAt}}' "$1" | awk '!($4="")')
+    image_age=$(date -d "$($image_date)" +%s)
+    max_age=$(date -d "$PARENT_MAX_AGE days ago" +%s)
+    
+    # We check if the image is up to date
+    if [[ "$image_age" -gt "$max_age" ]]; then
+        return 0
+    else
+        trap 'exit 1' SIGINT
+        if [[ "$repo_digests" = '[]' ]]; then
+            # Local image, we build
+            perform_build "$@"
+        else
+            # Remote image, we pull
+            docker pull "$1"
+        fi
+    fi
+    
+    return 0
+}
+
+do_update () {
+    check_service_existence "$1"
+    check_image_existence "$1"
+
+    image_age=$(docker images --format '{{.CreatedAt}}' "$1" | awk '!($4="")')
+    image_age=$(date -d "$($image_date)" +%s)
+    max_age=$(date -d "$MAX_AGE days ago" +%s)
+
+    if [[ "$image_age" -lt "$max_age" ]]; then
+        # Image is out of date, we first update its parents, then update it
+        parent=$(grep '^FROM' "$1"/Dockerfile | awk '{print $2}')
+        update_parent "$parent"
+
+        echo -e "\n\n################////////\nUpdating $1..."
+        source ./script update "$@"
+    fi
+}
+
+do_build () {
+    # If the image is remote, we pull
+    if ! $(docker-compose config --services | grep "^$1$" -q); then
+        docker pull "$1"
+        if [[ $? = 0 ]]; then
+            return 0
+        else
+            echo "Could not pull image: $1"
+            exit 1
+        fi
+    fi
+    
+    check_service_existence "$1"
+
+    # We first need to know if the parent exists and is up to date
+    parent=$(grep '^FROM' "$1"/Dockerfile | awk '{print $2}')
+
+    if [[ -n $(docker images | grep "^$parent\s") ]]; then
+        # Parent image already exists, we update it
+        update_parent "$parent"
+    else
+        # Parent image does not exist, we build it
+        do_build "$parent"
+    fi
+
+    # Build the current image
+    perform_build "$@"
+}
+
+do_run () {
+    check_service_existence "$1"
+    
+    if $(docker-compose ps "$1" | grep "Up" -q); then
+        echo "$1 is already running, spawning a shell..."
+        exec docker exec -ti "$1" bash
+    else
+        # We check if the image already exists
+        if $(docker images | grep "^$1\s" -q); then
+            if [[ $AUTO_UPDATE = true ]] ; then
+                do_update "$1"
+            fi
+        else
+            do_build "$1"
+        fi
+    fi
+
+    source ./script prerun "$@"
+    docker-compose run "${RUN_ARGS[@]}" "$1"
+    source ./script postrun "$@"
+}
+
+do_start () {
+    container=$(docker ps -aqf name="cpw_$1" | head -n 1)
+    
+    # We check if the container already exists
+    if [[ -n "$container" ]]; then
+        source ./script prerun "$@"
+        docker start -i "$container"
+        source ./script postrun "$@"
+        exit 1
+    else
+        do_run "$@"
+    fi
+}
+
+do_stop () {
+    check_service_existence "$1"
+    container=$(docker ps -aqf name="cpw_$1" | head -n 1)
+    docker stop "$container"
+    source ./script postrun "$@"
+}
+
+do_rm () {
+    check_service_existence "$1"
+    check_image_existence "$1"
+    remove_containers "$1"
+
+    docker rmi "$1"
+}
+
+do_edit () {
+    if [[ "$1" ]]; then
+        check_service_existence "$1"
+
+        "${EDITOR:-vi}" "$1"/Dockerfile
+        echo "Run 'cpw build <service>' if you want changes to take effect"
+    else
+        "${EDITOR:-vi}" docker-compose.yml
+    fi
+}
+
+do_new () {
+    if [[ "$1" ]]; then
+        mkdir "$1"
+        echo 'FROM ' > "$1"/Dockerfile
+        "${EDITOR:-vi}" docker-compose.yml "$1"/Dockerfile
+    else
+        echo "You need to provide a service name"
+    fi
+}
+
+case "$1" in
+    ls)
+        do_ls
+        ;;
+
+    update)
+        do_update "${@:2}"
+        ;;
+
+    build)
+        do_build "${@:2}"
+        ;;
+
+    run)
+        do_run "${@:2}"
+        ;;
+
+    start)
+        do_start "${@:2}"
+        ;;
+
+    stop)
+        do_stop "${@:2}"
+        ;;
+
+    rm)
+        do_rm "${@:2}"
+        ;;
+
+    rerun)
+        do_rm "${@:2}"
+        do_run "${@:2}"
+        ;;
+
+    edit)
+        do_edit "$2"
+        ;;
+
+    new)
+        do_new "$2"
+        ;;
+
+    script)
+        "${EDITOR:-vi}" script
+        ;;
+
+    *)
+        echo "$help_string"
+        exit 1
+esac
