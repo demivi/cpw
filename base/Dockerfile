@@ -21,13 +21,16 @@ RUN echo $'\n[archstrike]\nServer = https://mirror.archstrike.org/$arch/$repo' >
     pacman-key --lsign-key 9D5F1C051D146843CDA4858BDE64825E7CBC0D51 && \
     pacman -S archstrike-keyring --noconfirm && \
     pacman -S archstrike-mirrorlist --noconfirm && \
-    sed -i 's_Server = https://mirror.archstrike.org/$arch/$repo_Include = /etc/pacman.d/archstrike-mirrorlist_' /etc/pacman.conf && \
-    pacman -Syy
+    sed -i 's_Server = https://mirror.archstrike.org/$arch/$repo_Include = /etc/pacman.d/archstrike-mirrorlist_' /etc/pacman.conf
+
+# Setup BlackArch repository (https://blackarch.org/downloads.html)
+RUN curl -O https://blackarch.org/strap.sh && \
+    if [[ "$(sha1sum strap.sh | cut -d " " -f1)" = "9f770789df3b7803105e5fbc19212889674cd503" ]];then chmod +x strap.sh && ./strap.sh; fi
 
 # Setup mcar repository
-RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/demivi/PKGBUILDs/releases/download/current/' /etc/pacman.conf && \
-    pacman -Sy
+RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/demivi/PKGBUILDs/releases/download/current/' /etc/pacman.conf
 
-RUN pkgfile -u
+RUN pacman -Syy && \
+    pkgfile -u
 
 WORKDIR /home/me/volume
