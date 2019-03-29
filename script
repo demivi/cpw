@@ -97,7 +97,7 @@ if [[ "$1" = "init" ]]; then
         # Because the '--rm' argument is ignored in detached mode, you might
         # want to remove the container afterwards. This could for example be
         # done the next time cpw runs for the same profile.
-        containers=$(docker ps -aqf ancestor="$3")
+        containers=$(docker ps -aqf ancestor="$2")
 
         if [[ -n "$containers" ]]; then
             for container in $containers; do
