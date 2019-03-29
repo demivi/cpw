@@ -104,15 +104,19 @@ remove_containers () {
 perform_build () {
     remove_containers "$1"
     
-    image_ID=$(docker images -qf reference="$1")
+    old_image_ID=$(docker images -qf reference="$1")
     
     echo -e "\n\n################////////\nBuilding $1"
     source ./script build "$@"
+
+    new_image_ID=$(docker images -qf reference="$1")
     
     # If the old image is not used anymore we remove it
-    get_children "$image_ID"
-    if [[ ${#children[@]} -eq 0 ]]; then
-        docker rmi "$image_ID"
+    if [[ "$new_image_ID" != "$old_image_ID" ]]; then
+        get_children "$old_image_ID"
+        if [[ ${#children[@]} -eq 0 ]]; then
+            docker rmi "$old_image_ID"
+        fi
     fi
 }
 
