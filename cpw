@@ -47,14 +47,21 @@ do_ls () {
     services=$(docker-compose config --services)
     echo -e "\nHere are the existing services:"
     echo "$services"
+
     if [[ -n "$services" ]]; then
-    echo -e "\nHere are the images currently existing for these services:"
+        echo -e "\nHere are the images currently existing for these services:"
         for service in $services; do
             docker images | grep "^$service\s"
         done
+
         echo -e "\nHere are the containers running for these images:"
         docker-compose ps
         echo
+
+        echo -e "\nHere are the containers for these images:"
+        for service in $services; do
+            docker ps -a -f ancestor="$service" | grep "$service"
+        done
     fi
 }
 
