@@ -58,10 +58,11 @@ do_ls () {
         docker-compose ps
         echo
 
-        echo -e "\nHere are the containers for these images:"
+        echo -e "Here are the containers for these images:"
         for service in $services; do
             docker ps -a -f ancestor="$service" | grep "$service"
         done
+        echo
     fi
 }
 
@@ -225,9 +226,9 @@ do_start () {
     
     # We check if the container already exists
     if [[ -n "$container" ]]; then
-        source ./script prerun "$@"
+        source ./script prestart "$@"
         docker start -i "$container"
-        source ./script postrun "$@"
+        source ./script poststart "$@"
         exit 1
     else
         do_run "$@"
