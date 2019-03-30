@@ -94,8 +94,7 @@ remove_containers () {
 
         if [[ "$REPLY" =~ ^[Yy]$ ]]; then
             for container in $containers; do
-                docker stop "$container"
-                source ./script postrun "$@"
+                source ./script stop "$@"
                 docker rm "$container"
             done
         else

@@ -287,7 +287,7 @@ elif [[ "$event" = "commit" ]]; then
     fi
 
 ######################################!!!!######################################
-# Code for the cpw stop command
+# Runs every time cpw stops a container
 ######################################!!!!######################################
 elif [[ "$event" = "stop" ]]; then
     container=$(docker ps -aqf name="cpw_$service" | head -n 1)
