@@ -273,6 +273,18 @@ elif [[ "$event" = "start" ]]; then
         cpw run "${@:3}"
     fi
 
+######################################!!!!######################################
+# Code for the cpw commit command
+######################################!!!!######################################
+elif [[ "$event" = "commit" ]]; then
+    container=$(docker ps -aqf name="cpw_$service" | head -n 1)
+
+    # We make sure a container already exists
+    if [[ -n "$container" ]]; then
+        docker commit "$container" "$service"
+    else
+        echo "Did not find a container to commit"
+    fi
 
 ######################################!!!!######################################
 # Code for the cpw stop command

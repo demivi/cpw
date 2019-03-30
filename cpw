@@ -19,6 +19,7 @@ Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
     -build: manually build service image
     -new: create new profile
     -start: start a container if '--rm' has been removed from run arguments
+    -commit: commit an existing container into the new image for a service
     -stop: stop a running container
     -script: edit cpw script
 "
@@ -236,6 +237,11 @@ do_start () {
     fi
 }
 
+do_commit () {
+    check_service_existence "$2"
+    source ./script commit "$@"
+}
+
 do_stop () {
     check_service_existence "$2"
     source ./script stop "$@"
@@ -289,6 +295,10 @@ case "$1" in
 
     start)
         do_start "$@"
+        ;;
+
+    commit)
+        do_commit "$@"
         ;;
 
     stop)
