@@ -4,9 +4,10 @@
 # This script alows you to hook into parts of cpw by running custom code
 # triggered by different events.
 #
-# By default, it takes 2 arguments:
+# By default, it takes 3 arguments:
 #   $1 - the name of the event
-#   $2 - the name of the docker-compose service
+#   $2 - the cpw command (run, build, update, etc.)
+#   $3 - the name of the docker-compose service
 #
 # But cpw also passes any extra arguments you give it alowing you to
 # create additional custom conditions.
@@ -15,7 +16,8 @@
 ######################################!!!!######################################
 
 event="$1"
-service="$2"
+cpw_command="$2"
+service="$3"
 
 # You can use this type of function to set custom cgroups for a given container.
 # This example will remove restrictions on all USB devices for the container.
@@ -102,7 +104,8 @@ if [[ "$event" = "init" ]]; then
         # done the next time cpw runs for the same profile.
         containers=$(docker ps -aqf ancestor="$service")
 
-        if [[ -n "$containers" ]]; then
+        if [[ -n "$containers" && \
+            "$cpw_command" = "run" || "$cpw_command" = "update" ]]; then
             for container in $containers; do
                 docker stop "$container"
                 docker rm "$container"
@@ -110,15 +113,21 @@ if [[ "$event" = "init" ]]; then
         fi
     fi
 
-    # Here is an example of BUILD_ARGS change with a custom cpw parameter.
-    if [[ "$3" = "cache" ]]; then
-        BUILD_ARGS=( "--force-rm" )
-    fi
+    # Here is an example of BUILD_ARGS change with a custom cpw parameter. The
+    # '--no-cache' argument as been removed so running 'cpw run' or 'cpw build'
+    # with the '-c' flag will build images using cached layers.
+    for arg in "${@:4}"; do
+        if [[ "$arg" = "-c" ]]; then
+            BUILD_ARGS=( "--force-rm" )
+        fi
+    done
 
     # Add a flag to force update when running 'cpw run' or 'cpw update'.
-    if [[ "$3" = "-u" ]]; then
-        MAX_AGE=0
-    fi
+    for arg in "${@:4}"; do
+        if [[ "$arg" = "-u" ]]; then
+            MAX_AGE=0
+        fi
+    done
 
 ######################################!!!!######################################
 # Image update code
@@ -203,7 +212,7 @@ elif [[ "$event" = "prerun" ]]; then
         
         # This is an example of how you could use custom cpw arguments. Unless
         # you use 'cpw run mob noburp', AP traffic will not be forward to Burp.
-        #if [[ "$3" != "noburp" ]]; then
+        #if [[ "$4" != "noburp" ]]; then
         #    iptables -I INPUT 2 -p tcp \
         #        -s 192.168.12.0/24 --dport 8080 -j ACCEPT
         #    iptables -t nat -A PREROUTING -p tcp \
@@ -230,7 +239,7 @@ elif [[ "$event" = "postrun" ]]; then
     #if [[ "$service" = "mob" ]]; then
     #    create_ap --stop <wifi_interface>
     #    
-    #    if [[ "$3" != "noburp" ]]; then
+    #    if [[ "$4" != "noburp" ]]; then
     #        iptables -D INPUT -p tcp \
     #            -s 192.168.12.0/24 --dport 8080 -j ACCEPT
     #        iptables -t nat -D PREROUTING -p tcp \
@@ -250,14 +259,29 @@ elif [[ "$event" = "postrun" ]]; then
     true
 
 ######################################!!!!######################################
-# Runs before every cpw start
+# Code for the cpw start command
 ######################################!!!!######################################
-elif [[ "$event" = "prestart" ]]; then
-    source ./script prerun "$@"
+elif [[ "$event" = "start" ]]; then
+    container=$(docker ps -aqf name="cpw_$service" | head -n 1)
+
+    # We check if the container already exists
+    if [[ -n "$container" ]]; then
+        source ./script prerun "$@"
+        docker start "$container"
+        source ./script postrun "$@"
+    else
+        cpw run "${@:3}"
+    fi
+
 
 ######################################!!!!######################################
-# Runs after every cpw start
+# Code for the cpw stop command
 ######################################!!!!######################################
-elif [[ "$event" = "poststart" ]]; then
+elif [[ "$event" = "stop" ]]; then
+    container=$(docker ps -aqf name="cpw_$service" | head -n 1)
+    docker stop -t 2 "$container"
     source ./script postrun "$@"
+
+else
+    cpw -h
 fi
