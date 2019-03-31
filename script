@@ -290,9 +290,11 @@ elif [[ "$event" = "commit" ]]; then
 # Runs every time cpw stops a container
 ######################################!!!!######################################
 elif [[ "$event" = "stop" ]]; then
-    container=$(docker ps -aqf name="cpw_$service" | head -n 1)
-    docker stop -t 2 "$container"
-    source ./script postrun "$@"
+    containers=$(docker ps -aqf name="cpw_$service")
+    for container in $containers; do
+        docker stop -t 2 "$container"
+        source ./script postrun "$@"
+    done
 
 else
     cpw -h
