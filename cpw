@@ -46,24 +46,37 @@ check_service_existence () {
 
 do_ls () {
     services=$(docker-compose config --services)
-    echo -e "\nHere are the existing services:"
-    echo "$services"
 
-    if [[ -n "$services" ]]; then
-        echo -e "\nHere are the images currently existing for these services:"
-        for service in $services; do
-            docker images | grep "^$service\s"
-        done
+    containers=""
+    ls_string="SERVICES;IMAGES;CREATED;CONTAINERS;OF WHICH RUNNING\n"
 
-        echo -e "\nHere are the containers running for these images:"
-        docker-compose ps
+    for service in $services; do
+        image=$(docker images | grep "^$service\s" | awk '{print $3'})
+        if [[ -n "$image" ]]; then
+            created=$(docker images --format '{{.CreatedSince}}' "$service")
+        else
+            image='-'
+            created='-'
+        fi
+        containers=$(docker ps -aqf ancestor="$image" | wc -l)
+        running=$(docker ps -qf ancestor="$image" | wc -l)
+        ls_string="$ls_string$service;$image;$created;$containers;$running\n"
+    done
+    echo -e "$ls_string" | column -t -s ";" -o "     "
+
+    if [[ -n "$containers" ]]; then
         echo
-
-        echo -e "Here are the containers for these images:"
+        ls_string="SERVICES;CONTAINERS;STATUS\n"
         for service in $services; do
-            docker ps -a -f ancestor="$service" | grep "$service"
+            containers=$(docker ps -aqf ancestor="$service")
+            for container in $containers; do
+                container_status=$(docker ps -a \
+                    --format "{{.Image}};{{.ID}};{{.Status}}\n" \
+                    -f id="$container")
+                ls_string="$ls_string$container_status\n"
+            done
         done
-        echo
+        echo -e "$ls_string" | column -t -s ";" -o "     "
     fi
 }
 
