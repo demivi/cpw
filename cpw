@@ -142,7 +142,7 @@ update_parent () {
     # We only look for parents if we hit a local image
     if [[ "$repo_digests" = '[]' ]]; then
         parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
-        update_parent "$1" "$parent" "${@:2}"
+        update_parent "$1" "$parent" "${@:3}"
     fi
     
     image_age=$(docker images --format '{{.CreatedAt}}' "$2" | awk '!($4="")')
@@ -177,7 +177,7 @@ do_update () {
     if [[ "$image_age" -lt "$max_age" ]]; then
         # Image is out of date, we first update its parents, then update it
         parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
-        update_parent "$1" "$parent" "${@:2}"
+        update_parent "$1" "$parent" "${@:3}"
 
         echo -e "\n\n################////////\nUpdating $2..."
         source ./script update "$@"
@@ -203,7 +203,7 @@ do_build () {
 
     if [[ -n $(docker images | grep "^$parent\s") ]]; then
         # Parent image already exists, we update it
-        update_parent "$1" "$parent" "${@:2}"
+        update_parent "$1" "$parent" "${@:3}"
     else
         # Parent image does not exist, we build it
         do_build "$1" "$parent" "${@:3}"
@@ -228,7 +228,7 @@ do_run () {
                 do_update "$@"
             fi
         else
-            do_build "$1" "$parent" "${@:3}"
+            do_build "$@"
         fi
     fi
 
