@@ -206,9 +206,17 @@ elif [[ "$event" = "prerun" ]]; then
         #    echo
         #fi
         #
-        #adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
-        #    -e ssid <ap_name> -e password_type WPA -e password "$AP_PASSWORD"
-        #adb kill-server
+        #app=$(adb shell pm list packages | grep -q 'com.steinwurf.adbjoinwifi')
+        #if [[ -n "$app" ]]; then
+        #    adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
+        #        -e ssid ap -e password_type WPA -e password "$AP_PASSWORD"
+        #    adb kill-server
+        #else
+        #    echo "Could not find adb-join-wifi, AP on phone not configured"
+        #    echo "You will need this app on Android if you want AP autoconfig:"
+        #    echo "https://github.com/steinwurf/adb-join-wifi"
+        #fi
+
         
         # This is an example of how you could use custom cpw arguments. Unless
         # you use 'cpw run mob noburp', AP traffic will not be forward to Burp.
