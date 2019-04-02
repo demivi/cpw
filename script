@@ -203,7 +203,7 @@ elif [[ "$event" = "prerun" ]]; then
         #    echo
         #fi
         #
-        #app=$(adb shell pm list packages | grep -q 'com.steinwurf.adbjoinwifi')
+        #app=$(adb shell pm list packages | grep 'com.steinwurf.adbjoinwifi')
         #if [[ -n "$app" ]]; then
         #    adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
         #        -e ssid ap -e password_type WPA -e password "$AP_PASSWORD"
