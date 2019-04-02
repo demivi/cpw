@@ -26,7 +26,7 @@ service="$3"
 # which can be done by changing your docker-compose.yml (cpw edit).
 set_cgroup () {
     major_number="$(ls -l /dev/bus/usb/001/001 | awk '{print $5}' | tr -d ',')"
-    container_id="$(docker ps -qf "name=$1" --no-trunc)"
+    container_id="$(docker ps -qlf "ancestor=$1" --no-trunc)"
     echo "c $major_number:* rwm" > \
         /sys/fs/cgroup/devices/docker/$container_id/devices.allow
 }
@@ -183,9 +183,6 @@ elif [[ "$event" = "prerun" ]]; then
     # Commands to run before the 'mob' service starts.
     if [[ "$service" = "mob" ]]; then
 
-        # This sets a custom cgroup rule for the mobile pentest service.
-        sleep 1 && set_cgroup "$service" &
-
         # This will create a wifi access point.
         # It requires the create_ap script:
         # https://github.com/oblique/create_ap
@@ -228,6 +225,9 @@ elif [[ "$event" = "prerun" ]]; then
         #    iptables -t nat -A PREROUTING -p tcp \
         #        -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
         #fi
+
+        # This sets a custom cgroup rule for the mobile pentest service.
+        sleep 1 && set_cgroup "$service" &
     fi
 
     # Firewall configuration example for internal network pentests
