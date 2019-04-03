@@ -279,7 +279,7 @@ elif [[ "$event" = "start" ]]; then
         docker start "$container"
         source ./script postrun "$@"
     else
-        cpw run "${@:3}"
+        ./cpw run "${@:3}"
     fi
 
 ######################################!!!!######################################
@@ -306,5 +306,5 @@ elif [[ "$event" = "stop" ]]; then
     done
 
 else
-    cpw -h
+    ./cpw -h
 fi
