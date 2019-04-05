@@ -179,52 +179,75 @@ elif [[ "$event" = "prerun" ]]; then
     # Commands to run before the 'mob' service starts.
     if [[ "$service" = "mob" ]]; then
 
-        # This will create a wifi access point.
-        # It requires the create_ap script:
-        # https://github.com/oblique/create_ap
-        #AP_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
-        #echo "AP password: $AP_PASSWORD"
-        #create_ap --daemon \
-        #    <wifi_interface> \
-        #    <eth_interface> \
-        #    <ap_name> "$AP_PASSWORD" > /dev/null
-        
-        #if [[ $? -eq 0 ]]; then
-            # This will autoconfigure your AP on a plugged in Android phone.
-            # It requires adb on the host and the following app to be installed:
-            # https://github.com/steinwurf/adb-join-wifi
-            #if [ -z "$(adb devices | grep 'device$')" ]; then
-            #    echo "Warning: Could not access Android device."
-            #    echo "You need to unlock it and allow debugging"
-            #    read -p "Press enter to continue" -n 1 -r
-            #    echo
-            #fi
-            #
-            #app=$(adb shell pm list packages | grep 'steinwurf.adbjoinwifi')
-            #if [[ -n "$app" ]]; then
-            #    adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
-            #        -e ssid ap -e password_type WPA -e password "$AP_PASSWORD"
-            #    adb kill-server
-            #else
-            #    echo "Could not find adb-join-wifi, AP on phone not configured"
-            #    echo "You need this Android app if you want AP autoconfig:"
-            #    echo "https://github.com/steinwurf/adb-join-wifi"
-            #fi
-
-            # This is an example of how you could use custom cpw arguments.
-            # Unless you use 'cpw run mob noburp', AP traffic will not be
-            # forwarded to Burp.
-            #if ! [[ "${@:4}" =~ "noburp" ]]; then
-            #    echo "Redirecting web traffic from AP to 192.168.12.1"
-            #    iptables -I INPUT 2 -p tcp \
-            #        -s 192.168.12.0/24 --dport 8080 -j ACCEPT
-            #    iptables -t nat -A PREROUTING -p tcp \
-            #        -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
-            #    iptables -t nat -A PREROUTING -p tcp \
-            #        -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
-            #    echo "You can Bind Burp to 192.168.12.1 in invisible mode"
-            #fi
-        #fi
+#        ap_name=<change>
+#        wifi_interface=<change>
+#        eth_interface=<change>
+#
+#        # We store the AP password in a file to avoid having to type it every
+#        # time we start the container. The password is renewed if the file has
+#        # last been modified more than 5 days ago.
+#        pass_file="./ap_pass_file"
+#        ap_password=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
+#
+#        if [[ -n $(find "$pass_file" -mtime +5 2>&1) ]]; then
+#            if [[ ! -f "$pass_file" ]]; then
+#                touch "$pass_file"
+#                chmod 600 "$pass_file"
+#            fi
+#            echo -n $ap_password > $pass_file
+#        else
+#            ap_password=$(< $pass_file)
+#        fi
+#
+#        # This will create a wifi access point.
+#        # It requires the create_ap script:
+#        # https://github.com/oblique/create_ap
+#        echo "AP password: $ap_password"
+#        create_ap --daemon \
+#            "$wifi_interface" \
+#            "$eth_interface" \
+#            "$ap_name" "$ap_password" > /dev/null
+#
+#        trap "create_ap --stop $wifi_interface" SIGINT
+#
+#        if [[ $? -eq 0 ]]; then
+#            # This will autoconfigure your AP on a plugged in Android phone.
+#            # It requires adb on the host and this app to be installed:
+#            # https://github.com/steinwurf/adb-join-wifi
+#            if [ -z "$(adb devices | grep 'device$')" ]; then
+#                echo "Warning: Could not access Android device."
+#                echo "You need to unlock it and allow debugging"
+#                read -p "Press enter to continue" -n 1 -r
+#                echo
+#            fi
+#
+#            app=$(adb shell pm list packages | grep 'steinwurf.adbjoinwifi')
+#            if [[ -n "$app" ]]; then
+#                adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
+#                    -e ssid "$ap_name" \
+#                    -e password_type WPA \
+#                    -e password "$ap_password"
+#                adb kill-server
+#            else
+#                echo "Could not find adb-join-wifi, AP on phone not configured"
+#                echo "You need this Android app if you want AP autoconfig:"
+#                echo "https://github.com/steinwurf/adb-join-wifi"
+#            fi
+#
+#            # This is an example of how you could use custom cpw arguments.
+#            # Unless you use 'cpw run mob noburp', AP traffic will not be
+#            # forwarded to Burp.
+#            if ! [[ "${@:4}" =~ "noburp" ]]; then
+#                echo "Redirecting web traffic from AP to 192.168.12.1"
+#                iptables -I INPUT 2 -p tcp \
+#                    -s 192.168.12.0/24 --dport 8080 -j ACCEPT
+#                iptables -t nat -A PREROUTING -p tcp \
+#                    -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
+#                iptables -t nat -A PREROUTING -p tcp \
+#                    -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
+#                echo "You can Bind Burp to 192.168.12.1 in invisible mode"
+#            fi
+#        fi
 
         # This sets a custom cgroup rule for the mobile pentest service.
         sleep 1 && set_cgroup "$service" &
@@ -244,18 +267,19 @@ elif [[ "$event" = "prerun" ]]; then
 elif [[ "$event" = "postrun" ]]; then
 
     # Commands to run after the 'mob' service stops.
-    #if [[ "$service" = "mob" ]]; then
-    #    create_ap --stop <wifi_interface>
-    #    
-    #    if ! [[ "${@:4}" =~ "noburp" ]]; then
-    #        iptables -D INPUT -p tcp \
-    #            -s 192.168.12.0/24 --dport 8080 -j ACCEPT
-    #        iptables -t nat -D PREROUTING -p tcp \
-    #            -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
-    #        iptables -t nat -D PREROUTING -p tcp \
-    #            -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
-    #    fi
-    #fi
+    if [[ "$service" = "mob" ]]; then
+        #create_ap --stop "$wifi_interface"
+
+        #if ! [[ "${@:4}" =~ "noburp" ]]; then
+        #    iptables -D INPUT -p tcp \
+        #        -s 192.168.12.0/24 --dport 8080 -j ACCEPT
+        #    iptables -t nat -D PREROUTING -p tcp \
+        #        -s 192.168.12.0/24 --dport 80 -j REDIRECT --to-port 8080
+        #    iptables -t nat -D PREROUTING -p tcp \
+        #        -s 192.168.12.0/24 --dport 443 -j REDIRECT --to-port 8080
+        #fi
+        true
+    fi
 
     # Internal network pentest cleanup example
     #if [ "$service" = "int" ]; then
