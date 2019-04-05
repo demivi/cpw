@@ -62,7 +62,7 @@ do_ls () {
         running=$(docker ps -qf ancestor="$image" | wc -l)
         ls_string="$ls_string$service;$image;$created;$containers;$running\n"
     done
-    echo -e "$ls_string" | column -t -s ";" -o "     "
+    echo -e "$ls_string" | column -t -s ";"
 
     if [[ -n "$containers" ]]; then
         echo
@@ -76,7 +76,7 @@ do_ls () {
                 ls_string="$ls_string$container_status\n"
             done
         done
-        echo -e "$ls_string" | column -t -s ";" -o "     "
+        echo -e "$ls_string" | column -t -s ";"
     fi
 }
 
