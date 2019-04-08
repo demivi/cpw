@@ -203,12 +203,11 @@ elif [[ "$event" = "prerun" ]]; then
 #        # It requires the create_ap script:
 #        # https://github.com/oblique/create_ap
 #        echo "AP password: $ap_password"
+#        trap "create_ap --stop $wifi_interface" SIGINT
 #        create_ap --daemon \
 #            "$wifi_interface" \
 #            "$eth_interface" \
 #            "$ap_name" "$ap_password" > /dev/null
-#
-#        trap "create_ap --stop $wifi_interface" SIGINT
 #
 #        if [[ $? -eq 0 ]]; then
 #            # This will autoconfigure your AP on a plugged in Android phone.
