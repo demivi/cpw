@@ -50,7 +50,7 @@ get_children () {
 
     images=$(comm -12 \
         <(docker images --format "{{.Repository}}" | sort) \
-        <(docker-compose config --services))
+        <(docker-compose config --services | sort))
 
     for image in $images; do
         if $(docker history $image | grep "$1" -q); then
