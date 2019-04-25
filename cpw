@@ -44,6 +44,23 @@ check_service_existence () {
     fi
 }
 
+# Takes image ID as argument, returns image names
+get_children () {
+    children=()
+
+    images=$(comm -12 \
+        <(docker images --format "{{.Repository}}" | sort) \
+        <(docker-compose config --services))
+
+    for image in $images; do
+        if $(docker history $image | grep "$1" -q); then
+            children+=($image)
+        fi
+    done
+
+    children=("${children[@]:1}")
+}
+
 do_ls () {
     services=$(docker-compose config --services)
 
@@ -78,18 +95,6 @@ do_ls () {
         done
         echo -e "$ls_string" | column -t -s ";"
     fi
-}
-
-get_children () {
-    children=()
-
-    for image in $(docker images -q); do
-        if $(docker history $image | grep "$1" -q); then
-            children+=($image)
-        fi
-    done
-
-    children=("${children[@]:1}")
 }
 
 remove_containers () {
@@ -145,8 +150,9 @@ update_parent () {
         update_parent "$1" "$parent" "${@:3}"
     fi
     
-    image_age=$(docker images --format '{{.CreatedAt}}' "$2" | awk '!($4="")')
-    image_age=$(date -d "$($image_date)" +%s)
+    image_age=$(docker images --format '{{.CreatedAt}}' "$2" | \
+        awk '!($4="")' | head -n 1)
+    image_age=$(date -d "$image_age" +%s)
     max_age=$(date -d "$PARENT_MAX_AGE days ago" +%s)
     
     # We check if the image is up to date
@@ -171,16 +177,25 @@ do_update () {
     check_image_existence "$2"
 
     image_age=$(docker images --format '{{.CreatedAt}}' "$2" | awk '!($4="")')
-    image_age=$(date -d "$($image_date)" +%s)
+    image_age=$(date -d "$image_age" +%s)
     max_age=$(date -d "$MAX_AGE days ago" +%s)
 
     if [[ "$image_age" -lt "$max_age" ]]; then
-        # Image is out of date, we first update its parents, then update it
+        # Image is out of date, we first try to update its parents
         parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
+        old_parent_ID=$(docker images -qf reference="$parent")
+
         update_parent "$1" "$parent" "${@:3}"
 
-        echo -e "\n\n################////////\nUpdating $2..."
-        source ./script update "$@"
+        new_parent_ID=$(docker images -qf reference="$parent")
+        if [[ "$new_parent_ID" != "$old_parent_ID" ]]; then
+            # If parent has been rebuilt, we rebuild the current image
+            perform_build "$@"
+        else
+            # Otherwise, we simply update it
+            echo -e "\n\n################////////\nUpdating $2..."
+            source ./script update "$@"
+        fi
     fi
 }
 
@@ -262,8 +277,28 @@ do_stop () {
 do_rm () {
     check_service_existence "$2"
     check_image_existence "$2"
-    remove_containers "$@"
 
+    image_ID=$(docker images -qf reference="$2")
+
+    get_children "$image_ID"
+    if [[ ${#children[@]} -ne 0 ]]; then
+        echo "The image you want to remove has the following children:"
+        printf '%s\n' "${children[@]}"
+
+        read -p "They will also be removed; continue? (y/N) " -n 1 -r
+        echo
+
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            for child in "${children[@]}"; do
+                remove_containers "$1" "$child" "${@:3}"
+                docker rmi "$child"
+            done
+        else
+            exit 1
+        fi
+    fi
+
+    remove_containers "$@"
     docker rmi "$2"
 }
 

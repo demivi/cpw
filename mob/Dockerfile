@@ -15,5 +15,6 @@ RUN pacman -Syu --noconfirm && \
         p7zip \
         ripgrep \
         smali \
+        openssh \
         zipalign \
     --noconfirm --needed

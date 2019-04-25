@@ -122,9 +122,10 @@ if [[ "$event" = "init" ]]; then
         BUILD_ARGS=( "--force-rm" )
     fi
 
-    # Add a flag to force update when running 'cpw run' or 'cpw update'.
+    # Force update when running 'cpw run/update' but don't touch parents
     if [[ " ${@:4} " =~ " -u " ]]; then
         MAX_AGE=0
+        PARENT_MAX_AGE=9999
     fi
 
 ######################################!!!!######################################
@@ -165,6 +166,9 @@ elif [[ "$event" = "update" ]]; then
 ######################################!!!!######################################
 elif [[ "$event" = "build" ]]; then
     if wget -q -T 3 --spider google.com; then
+
+        # Exit right away when hitting CTRL+C
+        trap 'exit 1' SIGINT
 
         # This is the command used every time an image needs to be (re)built.
         docker-compose --log-level ERROR build "${BUILD_ARGS[@]}" "$service"
