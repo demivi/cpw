@@ -132,7 +132,9 @@ perform_build () {
     new_image_ID=$(docker images -qf reference="$2")
     
     # If the old image is not used anymore we remove it
-    if [[ "$new_image_ID" != "$old_image_ID" ]]; then
+    if [[ -n "$old_image_ID" ]] && \
+       [[ "$new_image_ID" != "$old_image_ID" ]]; then
+
         get_children "$old_image_ID"
         if [[ ${#children[@]} -eq 0 ]]; then
             docker rmi "$old_image_ID"
@@ -140,7 +142,7 @@ perform_build () {
     fi
 }
 
-# Recursively update parent images by rebuilding them.
+# Recursively update parent images by rebuilding them
 update_parent () {
     local repo_digests=$(docker inspect --format='{{.RepoDigests}}' "$2")
     
