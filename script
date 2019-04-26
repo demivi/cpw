@@ -69,6 +69,11 @@ if [[ "$event" = "init" ]]; then
     # docker-compose.yml and in this script. It needs to be exported to be
     # visible by docker-compose.
     export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
+
+    # If you use 'cpw run' or 'cpw start' on a service for which a container is
+    # already running, the following command will be executed on it instead of
+    # creating a new container.
+    EXEC_CMD="bash"
     
     # This is an array of the default arguments for the docker-compose run
     # command. Removing '--rm' is not advised as the created container will not

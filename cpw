@@ -245,7 +245,7 @@ do_run () {
 
     if [ -n "$running" ]; then
         echo "$2 is already running, spawning a shell..."
-        exec docker exec -ti "$running" bash
+        exec docker exec -ti "$running" "$EXEC_CMD"
     else
         # We check if the image already exists
         if $(docker images | grep "^$2\s" -q); then
@@ -268,7 +268,7 @@ do_start () {
 
     if [ -n "$running" ]; then
         echo "$2 is already running, spawning a shell..."
-        exec docker exec -ti "$running" bash
+        exec docker exec -ti "$running" "$EXEC_CMD"
     else
         source ./script start "$@"
     fi
