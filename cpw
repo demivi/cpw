@@ -145,11 +145,21 @@ perform_build () {
 # Recursively update parent images by rebuilding them
 update_parent () {
     local repo_digests=$(docker inspect --format='{{.RepoDigests}}' "$2")
+    local need_rebuild=false
     
     # We only look for parents if we hit a local image
     if [[ "$repo_digests" = '[]' ]]; then
-        parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
+        local parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
+        local old_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
+
         update_parent "$1" "$parent" "${@:3}"
+
+        local new_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
+
+        # We want to rebuild the current image if its parent has been rebuilt
+        if [[ "$new_parent_ID" != "$old_parent_ID" ]]; then
+            need_rebuild=true
+        fi
     fi
     
     image_age=$(docker images --format '{{.CreatedAt}}' "$2" | \
@@ -158,7 +168,7 @@ update_parent () {
     max_age=$(date -d "$PARENT_MAX_AGE days ago" +%s)
     
     # We check if the image is up to date
-    if [[ "$image_age" -gt "$max_age" ]]; then
+    if [[ "$image_age" -gt "$max_age" ]] && [[ "$need_rebuild" = false ]]; then
         return 0
     else
         trap 'exit 1' SIGINT
@@ -170,8 +180,6 @@ update_parent () {
             docker pull "$2"
         fi
     fi
-    
-    return 0
 }
 
 do_update () {
@@ -241,7 +249,7 @@ do_run () {
     else
         # We check if the image already exists
         if $(docker images | grep "^$2\s" -q); then
-            if [[ $AUTO_UPDATE = true ]] ; then
+            if [[ "$AUTO_UPDATE" = true ]] ; then
                 do_update "$@"
             fi
         else
