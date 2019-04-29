@@ -88,7 +88,7 @@ if [[ "$event" = "init" ]]; then
     # Premptively creating your volume directories will allow you to set their
     # permissions. If you let docker-compose create them they will be owned by
     # root.
-    if [ ! -d "$VOLUME_DIRECTORY" ]; then
+    if [[ ! -d "$VOLUME_DIRECTORY" ]]; then
         mkdir "$VOLUME_DIRECTORY"
         chown "$SUDO_USER" "$VOLUME_DIRECTORY"
     fi

@@ -69,23 +69,28 @@ do_ls () {
 
     for service in $services; do
         image=$(docker images | grep "^$service\s" | awk '{print $3'})
+
         if [[ -n "$image" ]]; then
             created=$(docker images --format '{{.CreatedSince}}' "$service")
         else
             image='-'
             created='-'
         fi
+
         containers=$(docker ps -aqf ancestor="$image" | wc -l)
         running=$(docker ps -qf ancestor="$image" | wc -l)
         ls_string="$ls_string$service;$image;$created;$containers;$running\n"
     done
+
     echo -e "$ls_string" | column -t -s ";"
 
     if [[ -n "$containers" ]]; then
         echo
         ls_string="SERVICES;CONTAINERS;STATUS\n"
+
         for service in $services; do
             containers=$(docker ps -aqf ancestor="$service")
+
             for container in $containers; do
                 container_status=$(docker ps -a \
                     --format "{{.Image}};{{.ID}};{{.Status}}\n" \
@@ -93,6 +98,7 @@ do_ls () {
                 ls_string="$ls_string$container_status\n"
             done
         done
+
         echo -e "$ls_string" | column -t -s ";"
     fi
 }
@@ -102,11 +108,18 @@ remove_containers () {
 
     if [[ -n "$containers" ]]; then
         echo "These containers are based on $2:"
-        for container in $containers; do
-            docker ps -a | grep $container
-        done
-        echo "They will need to be removed before cpw can proceed"
+        ls_string="ID;CREATED AT;STATUS\n"
 
+        for container in $containers; do
+            container_status=$(docker ps -a \
+                --format "{{.ID}};{{.CreatedAt}};{{.Status}}" \
+                -f id="$container")
+            ls_string="$ls_string$container_status\n"
+        done
+
+        echo -e "$ls_string" | column -t -s ";"
+        echo
+        echo "They will need to be removed before cpw can proceed"
         read -p "Do you want to remove them (y/N) " -n 1 -r
         echo
 
@@ -226,7 +239,7 @@ do_build () {
     # We first need to know if the parent exists and is up to date
     parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
 
-    if [[ -n $(docker images | grep "^$parent\s") ]]; then
+    if [[ -n $(docker images -qf reference="$parent") ]]; then
         # Parent image already exists, we update it
         update_parent "$1" "$parent" "${@:3}"
     else
