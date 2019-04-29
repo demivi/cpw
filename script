@@ -99,7 +99,7 @@ if [[ "$event" = "init" ]]; then
         MAX_AGE=12
     fi
 
-    # Here is an example of how you could change default run agruments for a
+    # Here is an example of how you could change default run arguments for a
     # given profile.
     if [[ "$service" = "burp" ]]; then
 
