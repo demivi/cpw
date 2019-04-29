@@ -114,7 +114,7 @@ if [[ "$event" = "init" ]]; then
         if [[ -n "$containers" && \
             "$cpw_command" = "run" || "$cpw_command" = "update" ]]; then
             for container in $containers; do
-                docker stop "$container"
+                source ./script stop "${@:2}"
                 docker rm "$container"
             done
         fi
@@ -318,9 +318,9 @@ elif [[ "$event" = "start" ]]; then
 
     # We check if the container already exists
     if [[ -n "$container" ]]; then
-        source ./script prerun "$@"
+        source ./script prerun "${@:2}"
         docker start "$container"
-        source ./script postrun "$@"
+        source ./script postrun "${@:2}"
     else
         ./cpw run "${@:3}"
     fi
@@ -345,7 +345,7 @@ elif [[ "$event" = "stop" ]]; then
     containers=$(docker ps -aqf name="cpw_$service")
     for container in $containers; do
         docker stop -t 2 "$container"
-        source ./script postrun "$@"
+        source ./script postrun "${@:2}"
     done
 
 else
