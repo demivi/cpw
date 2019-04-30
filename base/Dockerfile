@@ -1,8 +1,8 @@
 FROM archlinux/base
 
 RUN useradd -m me && \
-    mkdir /home/me/volume && \
-    chown -R me. /home/me/volume
+    mkdir /volume && \
+    chown -R me. /volume
 
 # Get a list of mirrors from archlinux.org, change country to fit your needs
 RUN curl -s "https://www.archlinux.org/mirrorlist/?country=FR&protocol=https&use_mirror_status=on" | sed -e 's/^#Server/Server/' -e '/^#/d' > /etc/pacman.d/mirrorlist
@@ -33,4 +33,4 @@ RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/de
 RUN pacman -Syy && \
     pkgfile -u
 
-WORKDIR /home/me/volume
+WORKDIR /volume

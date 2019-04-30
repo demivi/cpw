@@ -3,7 +3,7 @@ version: '3.7'
 x-common: &common
     network_mode: host
     volumes:
-        - ${VOLUME_DIRECTORY}:/home/me/volume
+        - ${VOLUME_DIRECTORY}:/volume
     environment:
         - COLUMNS
         - LINES
@@ -37,7 +37,7 @@ services:
         image: mob
         <<: *common
         volumes:
-            - ${VOLUME_DIRECTORY}:/home/me/volume
+            - ${VOLUME_DIRECTORY}:/volume
             - /dev/bus/usb:/dev/bus/usb
     web:
         build: ./web
