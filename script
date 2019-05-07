@@ -137,7 +137,7 @@ if [[ "$event" = "init" ]]; then
 # Image update code
 ######################################!!!!######################################
 elif [[ "$event" = "update" ]]; then
-    if wget -q -T 3 --spider google.com; then
+    if wget -q -T 3 -t 1 --spider google.com; then
 
         # Cleanup remaining container if the user hits CTRL+C during the update.
         trap 'docker rm cpw_update' SIGINT
@@ -170,7 +170,7 @@ elif [[ "$event" = "update" ]]; then
 # Image build code
 ######################################!!!!######################################
 elif [[ "$event" = "build" ]]; then
-    if wget -q -T 3 --spider google.com; then
+    if wget -q -T 3 -t 1 --spider google.com; then
 
         # Exit right away when hitting CTRL+C
         trap 'exit 1' SIGINT
