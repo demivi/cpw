@@ -19,6 +19,7 @@ Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
     -build: manually build service image
     -new: create new profile
     -start: start a container if '--rm' has been removed from run arguments
+    -exec: execute command on running container (default: bash)
     -commit: commit an existing container into the new image for a service
     -stop: stop a running container
     -script: edit cpw script
@@ -253,21 +254,15 @@ do_build () {
 
 do_run () {
     check_service_existence "$2"
+    source ./script exec "$@"
     
-    running=$(docker-compose ps "$2" | grep Up | awk '{print $1}')
-
-    if [ -n "$running" ]; then
-        echo "$2 is already running, spawning a shell..."
-        exec docker exec -ti "$running" "$EXEC_CMD"
-    else
-        # We check if the image already exists
-        if $(docker images | grep "^$2\s" -q); then
-            if [[ "$AUTO_UPDATE" = true ]] ; then
-                do_update "$@"
-            fi
-        else
-            do_build "$@"
+    # We check if the image already exists
+    if $(docker images | grep "^$2\s" -q); then
+        if [[ "$AUTO_UPDATE" = true ]] ; then
+            do_update "$@"
         fi
+    else
+        do_build "$@"
     fi
 
     source ./script prerun "$@"
@@ -277,14 +272,13 @@ do_run () {
 
 do_start () {
     check_service_existence "$2"
-    running=$(docker-compose ps "$2" | grep Up | awk '{print $1}')
+    source ./script exec "$@"
+    source ./script start "$@"
+}
 
-    if [ -n "$running" ]; then
-        echo "$2 is already running, spawning a shell..."
-        exec docker exec -ti "$running" "$EXEC_CMD"
-    else
-        source ./script start "$@"
-    fi
+do_exec () {
+    check_service_existence "$2"
+    source ./script exec "$@"
 }
 
 do_commit () {
@@ -357,6 +351,10 @@ case "$1" in
 
     build)
         do_build "$@"
+        ;;
+
+    exec)
+        do_exec "$@"
         ;;
 
     run)

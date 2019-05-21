@@ -70,11 +70,6 @@ if [[ "$event" = "init" ]]; then
     # visible by docker-compose.
     export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
 
-    # If you use 'cpw run' or 'cpw start' on a service for which a container is
-    # already running, the following command will be executed on it instead of
-    # creating a new container.
-    EXEC_CMD="bash"
-    
     # This is an array of the default arguments for the docker-compose run
     # command. Removing '--rm' is not advised as the created container will not
     # benefit from the cpw update system if 'cpw start' is used over 'cpw run'.
@@ -326,6 +321,26 @@ elif [[ "$event" = "start" ]]; then
     fi
 
 ######################################!!!!######################################
+# Code for the cpw exec command
+######################################!!!!######################################
+elif [[ "$event" = "exec" ]]; then
+    running=$(docker-compose ps "$service" | \
+        grep Up | awk '{print $1}' | head -n 1)
+
+    # If you use 'cpw run' or 'cpw start' on a service for which a container is
+    # already running, the following commands will be executed on it before
+    # attempting to create a new container.
+    if [[ -n "$running" ]]; then
+        echo "$service is already running, spawning a shell..."
+
+        # Most of the time you will want to end cpw execution here by using bash
+        # exec or 'exit 1' because letting the script run after an 'exec' event
+        # will fall through to 'cpw run/start' code (which builds/updates images
+        # and runs/starts containers) depending on the cpw command used.
+        exec docker exec -ti "$running" bash
+    fi
+
+######################################!!!!######################################
 # Code for the cpw commit command
 ######################################!!!!######################################
 elif [[ "$event" = "commit" ]]; then
@@ -343,6 +358,7 @@ elif [[ "$event" = "commit" ]]; then
 ######################################!!!!######################################
 elif [[ "$event" = "stop" ]]; then
     containers=$(docker ps -aqf name="cpw_$service")
+
     for container in $containers; do
         docker stop -t 2 "$container"
         source ./script postrun "${@:2}"
