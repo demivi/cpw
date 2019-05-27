@@ -90,7 +90,7 @@ do_ls () {
         ls_string="SERVICES;CONTAINERS;STATUS\n"
 
         for service in $services; do
-            containers=$(docker ps -aqf ancestor="$service")
+            containers=$(docker ps -a | grep "$service" | awk '{print $1}')
 
             for container in $containers; do
                 container_status=$(docker ps -a \
