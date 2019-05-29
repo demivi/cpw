@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $EUID != 0 ]; then
+if [[ $EUID != 0 ]]; then
     sudo "$0" "$@"
     exit $?
 fi
@@ -63,23 +63,27 @@ get_children () {
 }
 
 do_ls () {
-    services=$(docker-compose config --services)
+    services=$(docker-compose config --services | sort)
+    images=$(docker images --format '{{.Repository}};{{.ID}};{{.CreatedSince}}')
+    all_containers=$(docker ps -a)
 
     containers=""
     ls_string="SERVICES;IMAGES;CREATED;CONTAINERS;OF WHICH RUNNING\n"
 
     for service in $services; do
-        image=$(docker images | grep "^$service\s" | awk '{print $3'})
+        image=$(echo "$images" | grep "^$service;" | awk -F ';' '{print $2'})
 
         if [[ -n "$image" ]]; then
-            created=$(docker images --format '{{.CreatedSince}}' "$service")
+            created=$(echo "$images" | grep "^$service;" | \
+                awk -F ';' '{print $3}')
         else
             image='-'
             created='-'
         fi
 
-        containers=$(docker ps -aqf ancestor="$image" | wc -l)
-        running=$(docker ps -qf ancestor="$image" | wc -l)
+        containers=$(echo "$all_containers" | grep "cpw_$service" | wc -l)
+        running=$(echo "$all_containers" | grep "\sUp\s" | grep "cpw_$service" \
+            | wc -l)
         ls_string="$ls_string$service;$image;$created;$containers;$running\n"
     done
 
@@ -87,15 +91,15 @@ do_ls () {
 
     if [[ -n "$containers" ]]; then
         echo
+        all_status=$(docker ps -a --format "{{.Image}};{{.ID}};{{.Status}}")
         ls_string="SERVICES;CONTAINERS;STATUS\n"
 
         for service in $services; do
-            containers=$(docker ps -a | grep "$service" | awk '{print $1}')
+            containers=$(echo "$all_containers" | grep "cpw_$service" | \
+                awk '{print $1}')
 
             for container in $containers; do
-                container_status=$(docker ps -a \
-                    --format "{{.Image}};{{.ID}};{{.Status}}\n" \
-                    -f id="$container")
+                container_status=$(echo "$all_status" | grep "$container")
                 ls_string="$ls_string$container_status\n"
             done
         done
