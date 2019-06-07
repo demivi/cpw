@@ -104,7 +104,7 @@ if [[ "$event" = "init" ]]; then
         # Because the '--rm' argument is ignored in detached mode, you might
         # want to remove the containers afterwards. This could for example be
         # done the next time 'cpw run' or 'cpw update' is used.
-        containers=$(docker ps -aqf ancestor="$service")
+        containers=$(docker ps -a | grep "cpw_$service" | awk '{print $1}')
 
         if [[ -n "$containers" && \
             "$cpw_command" = "run" || "$cpw_command" = "update" ]]; then

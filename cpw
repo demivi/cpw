@@ -109,7 +109,7 @@ do_ls () {
 }
 
 remove_containers () {
-    containers=$(docker ps -aqf ancestor="$2")
+    containers=$(docker ps -a | grep "cpw_$2" | awk '{print $1}')
 
     if [[ -n "$containers" ]]; then
         echo "These containers are based on $2:"
