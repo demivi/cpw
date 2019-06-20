@@ -27,7 +27,7 @@ service="$3"
 # which can be done by changing your docker-compose.yml (cpw edit).
 set_cgroup () {
     major_number="$(ls -l /dev/bus/usb/001/001 | awk '{print $5}' | tr -d ',')"
-    container_id="$(docker ps -qlf "ancestor=$1" --no-trunc)"
+    container_id="$(docker ps -qlf "name=cpw_$1" --no-trunc)"
     echo "c $major_number:* rwm" > \
         /sys/fs/cgroup/devices/docker/$container_id/devices.allow
 }
@@ -49,7 +49,7 @@ if [[ "$event" = "init" ]]; then
     fi
 
     # Default editor to use when editing this script, docker-compose.yml or
-    # Dockerfiles
+    # Dockerfiles.
     EDITOR=vim
 
     # This controls whether or not cpw will try to update whenever you run 'cpw
@@ -58,12 +58,12 @@ if [[ "$event" = "init" ]]; then
     
     # Set the maximum number of days before an image gets updated if auto-update
     # is enabled.
-    MAX_AGE=6
+    MAX_AGE=15
     
     # The number of days parent images should be rebuilt after. Whenever cpw
     # updates or builds an image, it rebuilds its parents if they are older than
     # this number of days.
-    PARENT_MAX_AGE=22
+    PARENT_MAX_AGE=60
     
     # This is an example of a volume variable which can be used by
     # docker-compose.yml and in this script. It needs to be exported to be
@@ -88,15 +88,12 @@ if [[ "$event" = "init" ]]; then
         chown "$SUDO_USER" "$VOLUME_DIRECTORY"
     fi
 
-    # Here is a way you can override your default configuration based on
-    # service names.
-    if [[ "$service" = "burp" ]]; then
-        MAX_AGE=12
-    fi
-
-    # Here is an example of how you could change default run arguments for a
+    # Here is an example of how you could change the default behavior for a
     # given profile.
     if [[ "$service" = "burp" ]]; then
+
+        # You can overwrite the MAX_AGE variable for example.
+        MAX_AGE=30
 
         # This will make the container run in detached mode.
         RUN_ARGS=( "-d" )
@@ -104,10 +101,10 @@ if [[ "$event" = "init" ]]; then
         # Because the '--rm' argument is ignored in detached mode, you might
         # want to remove the containers afterwards. This could for example be
         # done the next time 'cpw run' or 'cpw update' is used.
-        containers=$(docker ps -a | grep "cpw_$service" | awk '{print $1}')
+        containers=$(docker ps -aqf "name=cpw_$service")
 
         if [[ -n "$containers" && \
-            "$cpw_command" = "run" || "$cpw_command" = "update" ]]; then
+            "$cpw_command" =~ ^.*run$ || "$cpw_command" = "update" ]]; then
             for container in $containers; do
                 source ./script stop "${@:2}"
                 docker rm "$container"
@@ -309,7 +306,7 @@ elif [[ "$event" = "postrun" ]]; then
 # Code for the cpw start command
 ######################################!!!!######################################
 elif [[ "$event" = "start" ]]; then
-    container=$(docker ps -aqf name="cpw_$service" | head -n 1)
+    container=$(docker ps -alqf name="cpw_$service")
 
     # We check if the container already exists
     if [[ -n "$container" ]]; then
@@ -324,8 +321,7 @@ elif [[ "$event" = "start" ]]; then
 # Code for the cpw exec command
 ######################################!!!!######################################
 elif [[ "$event" = "exec" ]]; then
-    running=$(docker-compose ps "$service" | \
-        grep Up | awk '{print $1}' | head -n 1)
+    running=$(docker ps -qf "name=cpw_$service" | head -n 1)
 
     # If you use 'cpw run' or 'cpw start' on a service for which a container is
     # already running, the following commands will be executed on it before
@@ -344,7 +340,7 @@ elif [[ "$event" = "exec" ]]; then
 # Code for the cpw commit command
 ######################################!!!!######################################
 elif [[ "$event" = "commit" ]]; then
-    container=$(docker ps -aqf name="cpw_$service" | head -n 1)
+    container=$(docker ps -alqf name="cpw_$service")
 
     # We make sure a container already exists
     if [[ -n "$container" ]]; then

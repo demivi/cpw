@@ -1,11 +1,10 @@
 #!/bin/bash
 
 if [[ $EUID != 0 ]]; then
-    sudo "$0" "$@"
-    exit $?
+    exec sudo "$0" "$@"
 fi
 
-# Help string can be overridden in the cpw script
+# Help string can be overwritten in the cpw script
 help_string="
 Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
    or: cpw {ls|edit|script}
@@ -109,7 +108,7 @@ do_ls () {
 }
 
 remove_containers () {
-    containers=$(docker ps -a | grep "cpw_$2" | awk '{print $1}')
+    containers=$(docker ps -aqf "name=cpw_$2")
 
     if [[ -n "$containers" ]]; then
         echo "These containers are based on $2:"
@@ -261,7 +260,7 @@ do_run () {
     source ./script exec "$@"
     
     # We check if the image already exists
-    if $(docker images | grep "^$2\s" -q); then
+    if [[ -n $(docker images -qf reference="$2") ]]; then
         if [[ "$AUTO_UPDATE" = true ]] ; then
             do_update "$@"
         fi
@@ -328,7 +327,7 @@ do_edit () {
         check_service_existence "$1"
 
         "${EDITOR:-vi}" "$1"/Dockerfile
-        echo "Run 'cpw build <service>' if you want changes to take effect"
+        echo "Run 'cpw build $1' if you want changes to take effect"
     else
         "${EDITOR:-vi}" docker-compose.yml
     fi
