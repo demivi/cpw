@@ -405,3 +405,5 @@ case "$1" in
         source ./script "$@"
         exit 1
 esac
+
+source ./script exit "$@"
