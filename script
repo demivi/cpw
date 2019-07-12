@@ -327,13 +327,17 @@ elif [[ "$event" = "exec" ]]; then
     # already running, the following commands will be executed on it before
     # attempting to create a new container.
     if [[ -n "$running" ]]; then
-        echo "$service is already running, spawning a shell..."
+        if [[ -n "${@:4}" ]]; then
+            exec docker exec -ti "$running" "${@:4}"
+        else
+            echo "$service is already running, spawning a shell..."
 
-        # Most of the time you will want to end cpw execution here by using bash
-        # exec or 'exit 1' because letting the script run after an 'exec' event
-        # will fall through to 'cpw run/start' code (which builds/updates images
-        # and runs/starts containers) depending on the cpw command used.
-        exec docker exec -ti "$running" bash
+            # Most of the time you will want to end cpw execution here by using bash
+            # exec or 'exit 1' because letting the script run after an 'exec' event
+            # will fall through to 'cpw run/start' code (which builds/updates images
+            # and runs/starts containers) depending on the cpw command used.
+            exec docker exec -ti "$running" bash
+        fi
     fi
 
 ######################################!!!!######################################
