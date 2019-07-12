@@ -9,6 +9,8 @@ x-common: &common
         - LINES
         - EDITOR
 
+# cpw assumes service names are used as image names
+# configuring otherwise here will break cpw
 services:
     base:
         build: ./base

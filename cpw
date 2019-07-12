@@ -48,10 +48,12 @@ check_service_existence () {
 get_children () {
     children=()
 
+    # Get the list of local images associated with compose services
     images=$(comm -12 \
         <(docker images --format "{{.Repository}}" | sort) \
         <(docker-compose config --services | sort))
 
+    # Get a list of images that are children of the input service
     for image in $images; do
         if $(docker history $image | grep "$1" -q); then
             children+=($image)
@@ -62,6 +64,7 @@ get_children () {
 }
 
 do_ls () {
+    # Minimize the number of times docker commands are run because they are slow
     services=$(docker-compose config --services | sort)
     images=$(docker images --format '{{.Repository}};{{.ID}};{{.CreatedSince}}')
     all_containers=$(docker ps -a)
@@ -69,6 +72,7 @@ do_ls () {
     containers=""
     ls_string="SERVICES;IMAGES;CREATED;CONTAINERS;OF WHICH RUNNING\n"
 
+    # Get a detailed list of compose services
     for service in $services; do
         image=$(echo "$images" | grep "^$service;" | awk -F ';' '{print $2'})
 
@@ -88,6 +92,7 @@ do_ls () {
 
     echo -e "$ls_string" | column -t -s ";"
 
+    # Get a detailed list of containers created from compose services
     if [[ -n "$containers" ]]; then
         echo
         all_status=$(docker ps -a --format "{{.Image}};{{.ID}};{{.Status}}")
@@ -107,6 +112,7 @@ do_ls () {
     fi
 }
 
+# Takes a service name as argument
 remove_containers () {
     containers=$(docker ps -aqf "name=cpw_$2")
 
@@ -114,6 +120,7 @@ remove_containers () {
         echo "These containers are based on $2:"
         ls_string="ID;CREATED AT;STATUS\n"
 
+        # Format a list of containers based on input service
         for container in $containers; do
             container_status=$(docker ps -a \
                 --format "{{.ID}};{{.CreatedAt}};{{.Status}}" \
@@ -259,7 +266,7 @@ do_run () {
     check_service_existence "$2"
     source ./script exec "$@"
     
-    # We check if the image already exists
+    # We check if the image already exists, if not we need to build it
     if [[ -n $(docker images -qf reference="$2") ]]; then
         if [[ "$AUTO_UPDATE" = true ]] ; then
             do_update "$@"

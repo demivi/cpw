@@ -84,7 +84,7 @@ if [[ "$event" = "init" ]]; then
     # permissions. If you let docker-compose create them they will be owned by
     # root.
     if [[ ! -d "$VOLUME_DIRECTORY" ]]; then
-        mkdir "$VOLUME_DIRECTORY"
+        mkdir -p "$VOLUME_DIRECTORY"
         chown "$SUDO_USER" "$VOLUME_DIRECTORY"
     fi
 
@@ -119,7 +119,7 @@ if [[ "$event" = "init" ]]; then
         BUILD_ARGS=( "--force-rm" )
     fi
 
-    # Force update when running 'cpw run/update' but don't touch parents
+    # Force update when running 'cpw run/update' but don't touch parents.
     if [[ " ${@:4} " =~ " -u " ]]; then
         MAX_AGE=0
         PARENT_MAX_AGE=9999
@@ -164,11 +164,11 @@ elif [[ "$event" = "update" ]]; then
 elif [[ "$event" = "build" ]]; then
     if wget -q -T 3 -t 1 --spider google.com; then
 
-        # Exit right away when hitting CTRL+C
-        trap 'exit 1' SIGINT
-
         # This is the command used every time an image needs to be (re)built.
-        docker-compose --log-level ERROR build "${BUILD_ARGS[@]}" "$service"
+        if ! docker-compose build "${BUILD_ARGS[@]}" "$service"; then
+            echo "Build failed, check your Dockerfile (cpw edit $service)"
+            exit 1
+        fi
     else
         echo "Can't build without internet access"
         exit 1
