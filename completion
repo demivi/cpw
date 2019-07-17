@@ -9,7 +9,7 @@ _cpw_completion()
 
     case "${prev}" in
         build | commit | edit | exec | rerun | rm | run | start | stop | update)
-            local profiles="$(find . -mindepth 1 -maxdepth 1 ! -name '.*' -type d -printf '%f\n')"
+            local profiles="$(find /usr/lib/cpw -mindepth 1 -maxdepth 1 ! -name '.*' -type d -printf '%f\n')"
             COMPREPLY=( $(compgen -W "${profiles}" -- ${cur}) )
             return 0
             ;;
