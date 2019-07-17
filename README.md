@@ -29,7 +29,7 @@ makepkg -si
 
 ### Other distros
 
-Clone the repository and make sure only root has write access to every file. Create a script in your $PATH that changes directory to where cpw.sh is located and executes it with the provided arguments.
+Clone the repository and make sure only root has write access to every file. Create a script in your $PATH that changes directory to where cpw is located and executes it with the provided arguments.
 
 Here is an example:
 
@@ -37,32 +37,34 @@ Here is an example:
 ```
 #!/bin/sh
 cd /usr/lib/cpw/
-exec /usr/lib/cpw/cpw.sh "$@"
+exec /usr/lib/cpw/cpw "$@"
 ```
 
 Dependencies: bash, docker, docker-compose
 
-Optional: systemd, wget
+Optional: adb, create_ap, systemd, wget
 
 ## Usage
 
+You will usually want to start by listing available profiles:
 ```
-Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
-   or: cpw {ls|edit|script}
-
-    -ls: list services and check which of them have existing images
-    -run: start a new service; will build or update images if necessary
-    -rm: remove a service image
-    -rerun: shortcut to rm then run
-    -edit: edit existing service; give no argument to edit compose file
-    -update: manually update service image
-    -build: manually build service image
-    -new: create new profile
-    -start: start a container if '--rm' has been removed from run arguments
-    -stop: stop a running container
-    -script: edit cpw script
+cpw ls
 ```
 
-This repository contains profile examples as well as a cpw script to give you something to start with.
+You can then start a profile with either of these commands:
+```
+cpw start <profile>
+cpw run <profile>
+```
 
-This tool provides an auto-update mechanism as well a scriptable interface to create service specific behaviors triggered by different events. Use 'cpw script' to modify these behaviors.
+- The first one will check for existing containers and will try to start the most recent one. If none is found it falls back to `cpw run`.
+- The second command will start a new container for the profile regardless of existing ones.
+
+For a complete list of cpw commands:
+```
+cpw -h
+```
+
+This repository contains profile examples to give you something to start with.
+
+This tool provides an auto-update mechanism as well a scriptable interface to create service specific behaviors triggered by different events. Use `cpw script` to modify these behaviors.
