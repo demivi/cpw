@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ######################################!!!!######################################
-# This script alows you to hook into parts of cpw by running custom code
+# This script allows you to hook into parts of cpw by running custom code
 # triggered by different events.
 #
 # By default, it takes 3 arguments:
@@ -9,7 +9,7 @@
 #   $2 - the cpw command (run, build, update, etc.)
 #   $3 - the name of the docker-compose service
 #
-# But cpw also passes any extra arguments you give it alowing you to create
+# Moreover, cpw passes any extra argument you give it, allowing you to create
 # additional custom conditions. Basically, all the arguments you give to cpw are
 # passed here prepended with the event name as a first argument.
 #
@@ -80,7 +80,7 @@ if [[ "$event" = "init" ]]; then
     # containers from failed builds behind.
     BUILD_ARGS=( "--force-rm" "--no-cache" )
 
-    # Premptively creating your volume directories will allow you to set their
+    # Preemptively creating your volume directories will allow you to set their
     # permissions. If you let docker-compose create them they will be owned by
     # root.
     if [[ ! -d "$VOLUME_DIRECTORY" ]]; then
@@ -134,14 +134,14 @@ elif [[ "$event" = "update" ]]; then
         # Cleanup remaining container if the user hits CTRL+C during the update.
         trap 'docker rm cpw_update' SIGINT
         
-        # This gets the current image CMD to reset it later when commiting.
+        # This gets the current image CMD to reset it later when committing.
         current_cmd=$(docker inspect -f '{{.Config.Cmd}}' "$service" | \
             sed 's/[][]//g' | cut -d " " -f 3-)
         
         # This is an example of how you could run a command in parallel to
         # the update process. Note that this will be interrupted if it does
         # not terminate before the main update, so only use this if you can
-        # afford the risk. This line is optionnal.
+        # afford the risk. This line is optional.
         sleep 1 && docker exec -d cpw_update bash -c "pkgfile -u" &
         
         # This is the update command. The image CMD is changed to allow
@@ -332,10 +332,11 @@ elif [[ "$event" = "exec" ]]; then
         else
             echo "$service is already running, spawning a shell..."
 
-            # Most of the time you will want to end cpw execution here by using bash
-            # exec or 'exit 1' because letting the script run after an 'exec' event
-            # will fall through to 'cpw run/start' code (which builds/updates images
-            # and runs/starts containers) depending on the cpw command used.
+            # Most of the time you will want to end cpw execution here by using
+            # bash exec or 'exit 1' because letting the script run after an
+            # 'exec' event will fall through to 'cpw run/start' code (which
+            # builds/updates images and runs/starts containers) depending on the
+            # cpw command used.
             exec docker exec -ti "$running" bash
         fi
     fi
