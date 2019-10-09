@@ -268,10 +268,18 @@ elif [[ "$event" = "prerun" ]]; then
 
     # Firewall configuration example for internal network pentests
     #if [[ "$service" = "int" ]]; then
+
+    #    # Responder ports (note: multiport has a 15 ports limit)
     #    iptables -I INPUT 2 -p tcp -m multiport --dports \
-    #        21,25,53,80,88,110,139,143,389,443,445,587,1433,3141,4444 -j ACCEPT
+    #        21,25,53,80,88,110,139,143,389,443,445,587,1433,3128,3141 -j ACCEPT
+    #    iptables -I INPUT 2 -p tcp -m multiport --dports \
+    #        3389  -j ACCEPT
     #    iptables -I INPUT 2 -p udp -m multiport --dports \
-    #        53,88,137,138,5353,5355 -j ACCEPT
+    #        53,88,137,138,1434,5353 -j ACCEPT
+
+    #    # Other ports
+    #    iptables -I INPUT 2 -p tcp -m multiport --dports \
+    #        4444  -j ACCEPT
     #fi
 
 ######################################!!!!######################################
@@ -295,10 +303,18 @@ elif [[ "$event" = "postrun" ]]; then
 
     # Internal network pentest cleanup example
     #if [[ "$service" = "int" ]]; then
+
+    #    # Responder ports (note: multiport has a 15 ports limit)
     #    iptables -D INPUT -p tcp -m multiport --dports \
-    #        21,25,53,80,88,110,139,143,389,443,445,587,1433,3141,4444 -j ACCEPT
+    #        21,25,53,80,88,110,139,143,389,443,445,587,1433,3128,3141 -j ACCEPT
+    #    iptables -D INPUT -p tcp -m multiport --dports \
+    #        3389  -j ACCEPT
     #    iptables -D INPUT -p udp -m multiport --dports \
-    #        53,88,137,138,5353,5355 -j ACCEPT
+    #        53,88,137,138,1434,5353 -j ACCEPT
+
+    #    # Other ports
+    #    iptables -D INPUT -p tcp -m multiport --dports \
+    #        4444  -j ACCEPT
     #fi
     true
 
