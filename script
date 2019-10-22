@@ -70,6 +70,10 @@ if [[ "$event" = "init" ]]; then
     # visible by docker-compose.
     export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
 
+    # Use this array to specify the docker-compose options (docker-compose -h
+    # for more info).
+    COMPOSE_OPTS=()
+
     # This is an array of the default arguments for the docker-compose run
     # command. Removing '--rm' is not advised as the created container will not
     # benefit from the cpw update system if 'cpw start' is used over 'cpw run'.
@@ -165,7 +169,8 @@ elif [[ "$event" = "build" ]]; then
     if wget -q -T 3 -t 1 --spider google.com; then
 
         # This is the command used every time an image needs to be (re)built.
-        if ! docker-compose build "${BUILD_ARGS[@]}" "$service"; then
+        if ! docker-compose "${COMPOSE_OPTS[@]}" build "${BUILD_ARGS[@]}" \
+                            "$service"; then
             echo "Build failed, check your Dockerfile (cpw edit $service)"
             exit 1
         fi
