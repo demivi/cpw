@@ -82,7 +82,7 @@ if [[ "$event" = "init" ]]; then
 
     # Use this array to specify the docker-compose options (docker-compose -h
     # for more info).
-    COMPOSE_OPTS=()
+    COMPOSE_OPTS=( "--log-level" "ERROR" )
 
     # This is an array of the default arguments for the docker-compose run
     # command. Removing '--rm' is not advised as the created container will not
