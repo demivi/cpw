@@ -47,23 +47,27 @@ check_service_existence () {
     fi
 }
 
-# Takes image ID as argument, returns image names
+# Takes image name as first argument, image ID as second, returns image names
 get_children () {
     children=()
 
-    # Get the list of local images associated with compose services
+    # Get a list of local images associated with compose services
     images=$(comm -12 \
         <(docker images --format "{{.Repository}}" | sort) \
         <(docker-compose "${COMPOSE_OPTS[@]}" config --services | sort))
 
     # Get a list of images that are children of the input service
     for image in $images; do
-        if $(docker history $image | grep "$1" -q); then
-            children+=($image)
+        if [[ $image != "$1" ]]
+            if $(docker history $image | grep "$2" -q); then
+                children+=($image)
+            fi
+        else
+            if $(docker history -q $image | tail -n +2 | grep "$2" -q); then
+                children+=($image)
+            fi
         fi
     done
-
-    children=("${children[@]:1}")
 }
 
 # Takes a service name as argument
@@ -131,7 +135,7 @@ perform_build () {
     if [[ -n "$old_image_ID" ]] && \
        [[ "$new_image_ID" != "$old_image_ID" ]]; then
 
-        get_children "$old_image_ID"
+        get_children "$2" "$old_image_ID"
         if [[ ${#children[@]} -eq 0 ]]; then
             docker rmi "$old_image_ID"
         fi
@@ -332,7 +336,7 @@ do_rm () {
 
     image_ID=$(docker images -qf reference="$2")
 
-    get_children "$image_ID"
+    get_children "$2" "$image_ID"
     if [[ ${#children[@]} -ne 0 ]]; then
         echo "The image you want to remove has the following children:"
         printf '%s\n' "${children[@]}"
