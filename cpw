@@ -278,36 +278,6 @@ do_ls () {
     fi
 }
 
-do_build () {
-    # If the image is remote, we pull
-    if ! $(docker-compose "${COMPOSE_OPTS[@]}" config --services | \
-           grep "^$2$" -q); then
-        docker pull "$2"
-        if [[ $? = 0 ]]; then
-            return 0
-        else
-            echo "Could not pull image: $2"
-            exit 1
-        fi
-    fi
-    
-    check_service_existence "$2"
-
-    # We first need to know if the parent exists and is up to date
-    parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
-
-    if [[ -n $(docker images -qf reference="$parent") ]]; then
-        # Parent image already exists, we update it
-        recursive_build "$1" "$parent" "${@:3}"
-    else
-        # Parent image does not exist, we build it
-        do_build "$1" "$parent" "${@:3}"
-    fi
-
-    # Build the current image
-    perform_build "$@"
-}
-
 do_run () {
     check_service_existence "$2"
     source ./script exec "$@"
@@ -318,7 +288,7 @@ do_run () {
             perform_update "$@"
         fi
     else
-        do_build "$@"
+        recursive_build "$@"
     fi
 
     source ./script prerun "$@"
@@ -402,7 +372,7 @@ case "$1" in
         ;;
 
     build)
-        do_build "$@"
+        recursive_build "$@"
         ;;
 
     run)
