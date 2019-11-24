@@ -5,7 +5,7 @@ if [[ $EUID != 0 ]]; then
 fi
 
 # Help string can be overwritten in the cpw script
-help_string="
+HELP_STRING="
 Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
    or: cpw {ls|edit|script}
 
@@ -150,7 +150,7 @@ update_parent () {
     local repo_digests=$(docker inspect --format='{{.RepoDigests}}' "$2")
     local need_rebuild=false
     
-    # We only look for parents if we hit a local image
+    # We only look for a parent if we hit a local image
     if [[ "$repo_digests" = '[]' ]]; then
         local parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
         local old_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
@@ -158,9 +158,14 @@ update_parent () {
         update_parent "$1" "$parent" "${@:3}"
 
         local new_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
+        local stored_parent_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | \
+                                 cut -d ";" -f1)
 
         # We want to rebuild the current image if its parent has been rebuilt
         if [[ "$new_parent_ID" != "$old_parent_ID" ]]; then
+            need_rebuild=true
+        # We also want to rebuild if the parent has a more recent build
+        elif [[ "$stored_parent_ID" != "$old_parent_ID" ]]; then
             need_rebuild=true
         fi
     fi
@@ -436,7 +441,7 @@ case "$1" in
         ;;
 
     -h|--help|help)
-        echo "$help_string"
+        echo "$HELP_STRING"
         ;;
 
     *)
