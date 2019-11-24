@@ -202,27 +202,28 @@ recursive_build () {
     fi
 }
 
-perform_update () {
+update_check () {
     check_service_existence "$2"
     check_image_existence "$2"
 
-    image_age=$(docker images --format '{{.CreatedAt}}' "$2" | awk '!($4="")')
-    image_age=$(date -d "$image_age" +%s)
-    max_age=$(date -d "$MAX_AGE days ago" +%s)
+    # We get a timestamp of the last build for this image
+    stored_image_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
+    last_build=$(docker images --format '{{.CreatedAt}}' "$stored_image_ID" | \
+                 awk '!($4="")')
+    last_build=$(date -d "$last_build" +%s)
+    max_build_age=$(date -d "$PARENT_MAX_AGE days ago" +%s)
 
-    if [[ "$image_age" -lt "$max_age" ]]; then
-        # Image is out of date, we first try to update its parents
-        parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
-        old_parent_ID=$(docker images -qf reference="$parent")
+    # We check if the image needs to be rebuilt
+    if [[ "$last_build" -lt "$max_build_age" ]]; then
+        recursive_build "$@"
+    else
+        # If it does not, we check if it needs an update
+        image_age=$(docker images --format '{{.CreatedAt}}' "$2" | \
+                    awk '!($4="")')
+        image_age=$(date -d "$image_age" +%s)
+        max_age=$(date -d "$MAX_AGE days ago" +%s)
 
-        recursive_build "$1" "$parent" "${@:3}"
-
-        new_parent_ID=$(docker images -qf reference="$parent")
-        if [[ "$new_parent_ID" != "$old_parent_ID" ]]; then
-            # If parent has been rebuilt, we rebuild the current image
-            perform_build "$@"
-        else
-            # Otherwise, we simply update it
+        if [[ "$image_age" -lt "$max_age" ]]; then
             echo -e "\n\n################////////\nUpdating $2..."
             source ./script update "$@"
         fi
@@ -285,7 +286,7 @@ do_run () {
     # We check if the image already exists, if not we need to build it
     if [[ -n $(docker images -qf reference="$2") ]]; then
         if [[ "$AUTO_UPDATE" = true ]]; then
-            perform_update "$@"
+            update_check "$@"
         fi
     else
         recursive_build "$@"
