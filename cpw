@@ -171,8 +171,14 @@ recursive_build () {
     
     # We make sure the current image exists before trying to get its age
     if $(docker images | grep "^$2\s" -q); then
-        stored_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
-        last_build=$(docker images --format '{{.CreatedAt}}' "$stored_ID" | \
+
+        # If the image is local we use the stored ID
+        if [[ "$repo_digests" = '[]' ]]; then
+            build_ID=$(grep "last_build_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
+        else
+            build_ID=$(docker images -q "$2" | head -n 1)
+        fi
+        last_build=$(docker images --format '{{.CreatedAt}}' "$build_ID" | \
                      awk '!($4="")' | head -n 1)
         last_build=$(date -d "$last_build" +%s)
         max_build_age=$(date -d "$REBUILD_DAYS days ago" +%s)
@@ -208,8 +214,8 @@ update_check () {
     check_image_existence "$2"
 
     # We get a timestamp of the last build for this image
-    stored_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
-    last_build=$(docker images --format '{{.CreatedAt}}' "$stored_ID" | \
+    build_ID=$(grep "last_build_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
+    last_build=$(docker images --format '{{.CreatedAt}}' "$build_ID" | \
                  awk '!($4="")' | head -n 1)
     last_build=$(date -d "$last_build" +%s)
     max_build_age=$(date -d "$REBUILD_DAYS days ago" +%s)
