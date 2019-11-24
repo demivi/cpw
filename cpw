@@ -175,7 +175,7 @@ recursive_build () {
         last_build=$(docker images --format '{{.CreatedAt}}' "$stored_ID" | \
                      awk '!($4="")' | head -n 1)
         last_build=$(date -d "$last_build" +%s)
-        max_build_age=$(date -d "$PARENT_MAX_AGE days ago" +%s)
+        max_build_age=$(date -d "$REBUILD_DAYS days ago" +%s)
 
         # If the image is too old it needs to be rebuilt
         if [[ "$last_build" -lt "$max_build_age" ]]; then
@@ -212,7 +212,7 @@ update_check () {
     last_build=$(docker images --format '{{.CreatedAt}}' "$stored_ID" | \
                  awk '!($4="")' | head -n 1)
     last_build=$(date -d "$last_build" +%s)
-    max_build_age=$(date -d "$PARENT_MAX_AGE days ago" +%s)
+    max_build_age=$(date -d "$REBUILD_DAYS days ago" +%s)
 
     # We check if the image needs to be rebuilt
     if [[ "$last_build" -lt "$max_build_age" ]]; then
@@ -222,7 +222,7 @@ update_check () {
         image_age=$(docker images --format '{{.CreatedAt}}' "$2" | \
                     awk '!($4="")')
         image_age=$(date -d "$image_age" +%s)
-        max_age=$(date -d "$MAX_AGE days ago" +%s)
+        max_age=$(date -d "$UPDATE_DAYS days ago" +%s)
 
         if [[ "$image_age" -lt "$max_age" ]]; then
             echo -e "\n\n################////////\nUpdating $2..."

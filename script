@@ -66,14 +66,17 @@ if [[ "$event" = "init" ]]; then
     # run <service>' if the image is older than the configured max age.
     AUTO_UPDATE=true
 
-    # Set the maximum number of days before an image gets updated if auto-update
-    # is enabled.
-    MAX_AGE=15
-    
-    # The number of days parent images should be rebuilt after. Whenever cpw
-    # updates or builds an image, it rebuilds its parents if they are older than
-    # this number of days.
-    PARENT_MAX_AGE=60
+    # The number of days cpw should wait before triggering an update event on an
+    # image. The code dictating the update event behavior is in this same file
+    # below. By default it only does a system update for Arch Linux based images.
+    # This check is only triggered on a specified image (and never its parents)
+    # by 'cpw run' commands.
+    UPDATE_DAYS=15
+
+    # The number of days cpw should wait before rebuilding an image from
+    # scratch. This check is only triggered on an image and all its parents by
+    # 'cpw run' or 'cpw build' commands.
+    REBUILD_DAYS=60
     
     # This is an example of a volume variable which can be used by
     # docker-compose.yml and in this script. It needs to be exported to be
