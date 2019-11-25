@@ -205,6 +205,16 @@ recursive_build () {
             if [[ $? != 0 ]]; then
                 echo "Could not pull image: $2"
                 exit 1
+            else
+                images=$(docker images -q "$2")
+
+                # We check if we can remove unused remote images
+                for image in $images; do
+                    get_children "$2" "$image"
+                    if [[ ${#children[@]} -eq 0 ]]; then
+                        docker rmi "$image"
+                    fi
+                done
             fi
         fi
     fi
