@@ -154,11 +154,12 @@ recursive_build () {
     if [[ "$repo_digests" = '[]' ]]; then
         local parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
         local old_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
+        local stored_parent_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | \
+                                 cut -d ";" -f1)
 
         recursive_build "$1" "$parent" "${@:3}"
 
         new_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
-        stored_parent_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
 
         # We want to build the current image if its parent has been rebuilt
         if [[ "$new_parent_ID" != "$old_parent_ID" ]]; then
