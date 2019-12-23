@@ -9,6 +9,19 @@ x-common: &common
         - LINES
         - EDITOR
 
+# If you ever connect to a local network whose IP address range overlaps with
+# the default docker0 bridge configuration (172.17.0.0/16), you should change
+# your /etc/docker/daemon.json file to instruct the use of another range like:
+# {
+#   "bip": "192.168.145.1/24"
+# }
+# The following lines will make compose use that configuration for profiles in
+# bridge mode (network_mode: bridge):
+networks:
+    default:
+        ipam:
+            driver: default
+
 # cpw assumes service names are used as image names
 # configuring otherwise here will break cpw
 services:
