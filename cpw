@@ -129,8 +129,12 @@ perform_build () {
 
     new_image_ID=$(docker images -qf reference="$2")
 
-    # We store image IDs for future use
-    if [[ -n "$new_image_ID" ]]; then
+    if [[ -z "$old_image_ID" ]] && [[ -z "$new_image_ID" ]]; then
+        echo "Something went wrong with the build of $2"
+        echo "cpw cannot continue as there is no image for it"
+        exit 1
+    else
+        # We store image IDs for future use
         store_image_ID "$2" "$new_image_ID"
     fi
     

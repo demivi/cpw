@@ -203,8 +203,7 @@ elif [[ "$event" = "build" ]]; then
             exit 1
         fi
     else
-        echo "Can't build without internet access"
-        exit 1
+        echo "You do not seem to have Internet access, skipping build"
     fi
 
 ######################################!!!!######################################
