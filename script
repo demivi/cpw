@@ -215,6 +215,9 @@ elif [[ "$event" = "prerun" ]]; then
     # Commands to run before the 'mob' service starts.
     if [[ "$service" = "mob" ]]; then
 
+        # This section allows the creation of an AP to test mobile apps
+        # It requires the create_ap script (available on Arch repos):
+        # https://github.com/oblique/create_ap
 #        ap_name=<change>
 #        wifi_interface=<change>
 #        eth_interface=<change>
@@ -235,9 +238,7 @@ elif [[ "$event" = "prerun" ]]; then
 #            ap_password=$(< $pass_file)
 #        fi
 #
-#        # This will create a wifi access point.
-#        # It requires the create_ap script:
-#        # https://github.com/oblique/create_ap
+#        # This will create the wifi access point.
 #        echo "AP password: $ap_password"
 #        trap "create_ap --stop $wifi_interface" SIGINT
 #        create_ap --daemon \
@@ -249,38 +250,38 @@ elif [[ "$event" = "prerun" ]]; then
 #            # This will autoconfigure your AP on a plugged in Android phone.
 #            # It requires adb on the host and this app to be installed:
 #            # https://github.com/steinwurf/adb-join-wifi
-#            device=$(adb devices -l | grep 'transport_id' | \
-#                head -n 1 | awk '{print $2}')
+#            #device=$(adb devices -l | grep 'transport_id' | \
+#            #    head -n 1 | awk '{print $2}')
 #
-#            case "$device" in
-#            unauthorized)
-#                echo "Access to Android device unauthorized"
-#                echo "You need to unlock it and allow debugging"
-#                read -p "Once you are done, press Enter to continue"
-#                ;&
-#            device)
-#                app=$(adb shell pm list packages | \
-#                    grep 'steinwurf.adbjoinwifi')
+#            #case "$device" in
+#            #unauthorized)
+#            #    echo "Access to Android device unauthorized"
+#            #    echo "You need to unlock it and allow debugging"
+#            #    read -p "Once you are done, press Enter to continue"
+#            #    ;&
+#            #device)
+#            #    app=$(adb shell pm list packages | \
+#            #        grep 'steinwurf.adbjoinwifi')
 #
-#                if [[ -n "$app" ]]; then
-#                    adb shell am start \
-#                        -n com.steinwurf.adbjoinwifi/.MainActivity \
-#                        -e ssid "$ap_name" \
-#                        -e password_type WPA \
-#                        -e password "$ap_password"
-#                else
-#                    echo "Could not find adb-join-wifi, phone not configured"
-#                    echo "You need this Android app if you want AP autoconfig:"
-#                    echo "https://github.com/steinwurf/adb-join-wifi"
-#                fi
-#                ;;
-#            *)
-#                echo "You don't seem to have any Android phone plugged in"
-#                echo "Or you don't have USB debugging enabled"
-#                echo "Skipping Android phone AP autoconfiguration"
-#            esac
+#            #    if [[ -n "$app" ]]; then
+#            #        adb shell am start \
+#            #            -n com.steinwurf.adbjoinwifi/.MainActivity \
+#            #            -e ssid "$ap_name" \
+#            #            -e password_type WPA \
+#            #            -e password "$ap_password"
+#            #    else
+#            #        echo "Could not find adb-join-wifi, phone not configured"
+#            #        echo "You need this Android app if you want AP autoconfig"
+#            #        echo "https://github.com/steinwurf/adb-join-wifi"
+#            #    fi
+#            #    ;;
+#            #*)
+#            #    echo "You don't seem to have any Android phone plugged in"
+#            #    echo "Or you don't have USB debugging enabled"
+#            #    echo "Skipping Android phone AP autoconfiguration"
+#            #esac
 #
-#            adb kill-server
+#            #adb kill-server
 #
 #            # Unless you use 'cpw run mob noburp', AP traffic will be forwarded
 #            # to Burp.
