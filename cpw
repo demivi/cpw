@@ -122,27 +122,30 @@ store_image_ID () {
 }
 
 perform_build () {
-    remove_containers "$@"
-    
     old_image_ID=$(docker images -qf reference="$2")
     
     echo -e "\n\n################////////\nBuilding $2"
     source ./script build "$@"
 
     new_image_ID=$(docker images -qf reference="$2")
+
+    # We store image IDs for future use
+    if [[ -n "$new_image_ID" ]]; then
+        store_image_ID "$2" "$new_image_ID"
+    fi
     
     # If the old image is not used anymore we remove it
+    # If it's a first time build for this profile, old image will be empty
+    # In that case we don't want to remove anything
     if [[ -n "$old_image_ID" ]] && \
        [[ "$new_image_ID" != "$old_image_ID" ]]; then
+        remove_containers "$@"
 
         get_children "$2" "$old_image_ID"
         if [[ ${#children[@]} -eq 0 ]]; then
             docker rmi "$old_image_ID"
         fi
     fi
-
-    # We store image IDs for future use
-    store_image_ID "$2" "$new_image_ID"
 }
 
 # Recursively build or pull images by going from the top parent

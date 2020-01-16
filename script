@@ -62,6 +62,10 @@ if [[ "$event" = "init" ]]; then
     # to this array.
     DISABLED_UPDATES=( "burp" )
 
+    # If there is a profile you don't ever want to rebuild you can add it to
+    # this array.
+    DISABLED_REBUILDS=()
+
     # This controls whether or not cpw will try to update whenever you run 'cpw
     # run <service>' if the image is older than the configured max age.
     AUTO_UPDATE=true
@@ -182,6 +186,14 @@ elif [[ "$event" = "update" ]]; then
 # Image build code
 ######################################!!!!######################################
 elif [[ "$event" = "build" ]]; then
+
+    # We skip this event if rebuilds are disabled and an image already exists
+    if [[ " ${DISABLED_REBUILDS[@]} " =~ " $service " ]]; then
+        if [[ -n $(docker images -qf reference="$service") ]]; then
+            return 0
+        fi
+    fi
+
     if wget -q -T 3 -t 1 --spider google.com; then
 
         # This is the command used every time an image needs to be (re)built.
