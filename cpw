@@ -154,11 +154,15 @@ perform_build () {
 
 # Recursively build or pull images by going from the top parent
 recursive_build () {
-    local repo_digests=$(docker inspect --format='{{.RepoDigests}}' "$2")
+    if $(docker-compose --log-level ERROR config --services | \
+         grep "^$2$" -q); then
+        local local_image=true
+    fi
+
     local build_needed=false
     
     # We only look for a parent if we hit a local image
-    if [[ "$repo_digests" = '[]' ]]; then
+    if [[ "$local_image" = true ]]; then
         local parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
         local old_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
         local stored_parent_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | \
@@ -181,7 +185,7 @@ recursive_build () {
     if $(docker images | grep "^$2\s" -q); then
 
         # If the image is local we use the stored ID
-        if [[ "$repo_digests" = '[]' ]]; then
+        if [[ "$local_image" = true ]]; then
             build_ID=$(grep "last_build_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
         else
             build_ID=$(docker images -q "$2" | head -n 1)
@@ -203,7 +207,7 @@ recursive_build () {
     # We build or pull the image if any of the previous checks passed
     if [[ "$build_needed" = true ]]; then
         trap 'exit 1' SIGINT
-        if [[ "$repo_digests" = '[]' ]]; then
+        if [[ "$local_image" = true ]]; then
             # Local image, we build
             perform_build "$@"
         else
