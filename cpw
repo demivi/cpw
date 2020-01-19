@@ -133,7 +133,7 @@ perform_build () {
         echo "Something went wrong with the build of $2"
         echo "cpw cannot continue as there is no image for it"
         exit 1
-    else
+    elif [[ "$new_image_ID" != "$old_image_ID" ]]; then
         # We store image IDs for future use
         store_image_ID "$2" "$new_image_ID"
     fi
