@@ -40,7 +40,7 @@ cd /usr/lib/cpw/
 exec /usr/lib/cpw/cpw "$@"
 ```
 
-Dependencies: bash, docker, docker-compose
+Dependencies: bash, docker, docker-compose, sudo
 
 Optional: adb, create_ap, systemd, wget
 
