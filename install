@@ -1,0 +1,219 @@
+#!/bin/bash
+
+if [[ $EUID != 0 ]]; then
+    exec sudo "$0" "$@"
+fi
+
+apply_file_diffs () {
+    cp /usr/lib/cpw/"$1" /usr/lib/cpw/"$1".old
+    echo "Wrote previous "$1" to "$1".old"
+
+    diff -U 4 /usr/lib/cpw/"$1" "$1" > "$1".temp_patch
+    patch /usr/lib/cpw/"$1" < "$1".temp_patch
+    echo
+}
+
+show_file_diffs () {
+    diff -U 4 /usr/lib/cpw/"$1" "$1" --color
+
+    echo
+    read -p "Do you want to apply diffs? (y/N)" -n 1 -r
+    echo
+
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        apply_file_diffs "$1"
+    fi
+}
+
+file_diffs () {
+    if ! diff -U 4 /usr/lib/cpw/"$1" "$1" > /dev/null 2>&1; then
+        echo
+        echo "Your "$1" file differs from the new one"
+        echo "If you apply the changes it will delete your customizations"
+        echo "If you only show diffs, you can copy and paste changes manually"
+        echo
+        echo "Do you want to"
+        select answer in "Apply diffs" "Show diffs" Skip;
+        do
+            case "$answer" in
+                Apply*)
+                    apply_file_diffs "$1"
+                    break
+                    ;;
+                Show*)
+                    show_file_diffs "$1"
+                    break
+                    ;;
+                Skip)
+                    ;&
+                *)
+                    break
+                    ;;
+            esac
+        done
+        echo
+    else
+        echo "No difference between "$1" files"
+        echo
+    fi
+}
+
+apply_dir_diffs () {
+    read -p "This will overwrite the $1 directory, continue? (y/N)" -n 1 -r
+    echo
+
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        rm -rf /usr/lib/cpw/"$1"
+        cp -r "$1" /usr/lib/cpw/
+    fi
+    echo
+}
+
+show_dir_diffs () {
+    diff -ru /usr/lib/cpw/"$1" "$1" --color
+    echo
+
+    read -p "Do you want to apply diffs? (y/N)" -n 1 -r
+    echo
+
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        apply_dir_diffs "$1"
+    fi
+}
+
+list_dir_content () {
+    echo "Content of /usr/lib/cpw/$1:"
+    ls -lha /usr/lib/cpw/"$1"
+    echo
+
+    read -p "Do you want to show diffs? (y/N)" -n 1 -r
+    echo
+
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        show_dir_diffs "$1"
+    fi
+}
+
+dir_diffs () {
+    echo
+    echo "##########################################"
+    echo "##########################################"
+    echo
+    printf "%*s\n" $((($(echo $1 | wc -c) + 40) / 2 )) "${1%?}"
+    echo
+    echo "##########################################"
+    echo "##########################################"
+
+    if ! ls -lha /usr/lib/cpw/"$1" > /dev/null 2>&1; then
+        echo "/usr/lib/cpw/$1 does not exist"
+        echo
+
+        read -p "Do you want to import it? (y/N)" -n 1 -r
+        echo
+
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            echo "Copying $1 to /usr/lib/cpw/$1"
+            cp -r "$1" /usr/lib/cpw/
+
+            echo
+            echo "Note: Make sure you have a $1 entry in 'cpw edit'."
+            echo "Otherwise docker-compose will not register a $1 profile"
+            echo "and files in /usr/lib/cpw/$1 will be useless."
+            echo
+            echo "If you don't have an entry and want to import one,"
+            echo "rerun this script and make sure to merge the docker-compose file."
+            echo
+            read -n 1 -s -r -p "Press any key to continue"
+        fi
+
+        echo
+        echo "Note: Make sure you don't have a $1 entry in 'cpw edit'."
+        echo "Otherwise docker-compose will try to read files in"
+        echo "/usr/lib/cpw/$1 and will fail to do so because you did not import them."
+        echo
+        read -n 1 -s -r -p "Press any key to continue"
+    else
+        echo
+        if ! diff -qr /usr/lib/cpw/"$1" "$1"; then
+            echo
+            select answer in "Apply diffs" "Show diffs" "List existing files" Skip;
+            do
+                case "$answer" in
+                    Apply*)
+                        apply_dir_diffs "$1"
+                        break
+                        ;;
+                    Show*)
+                        show_dir_diffs "$1"
+                        break
+                        ;;
+                    List*)
+                        list_dir_content "$1"
+                        break
+                        ;;
+                    Skip)
+                        ;&
+                    *)
+                        break
+                        ;;
+                esac
+            done
+        else
+            echo "No files differ"
+        fi
+    fi
+}
+
+dependencies=( 'bash' 'docker' 'docker-compose' 'sudo' )
+
+for dependency in "${dependencies[@]}"; do
+    if ! command -v "$dependency" > /dev/null 2>&1; then
+        echo
+        echo "$dependency does not seem to be installed"
+        echo "you will need to install a recent version to run cpw properly"
+    fi
+done
+echo
+
+if ! ls /usr/lib/cpw > /dev/null 2>&1; then
+    echo "No previous installation detected, copying files to /usr/lib/cpw"
+    install -dm755 /usr/lib/cpw/
+    cp -r * /usr/lib/cpw/
+    chown -R root. /usr/lib/cpw/
+    chmod 755 /usr/lib/cpw/cpw
+
+    echo "Writing startup script to /usr/bin/cpw"
+    cat > /usr/bin/cpw << EOF
+#!/bin/bash
+cd "/usr/lib/cpw"
+exec "/usr/lib/cpw/cpw" "\$@"
+EOF
+
+    chmod 755 /usr/bin/cpw
+
+    echo "You can copy the bash completion file to the appropriate directory as 'cpw'"
+    echo "For example: cp completion /usr/share/bash-completion/completions/cpw"
+else
+    echo "cpw seems to be already installed"
+    read -p "Do you want to update and merge files now? (y/N)" -n 1 -r
+    echo
+
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        echo "Copying cpw file to /usr/lib/cpw"
+        cp cpw /usr/lib/cpw/cpw
+
+        file_diffs docker-compose.yml
+        file_diffs script
+
+        read -p "Do you want to check individual profiles? (y/N)" -n 1 -r
+        echo
+
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            for directory in */; do
+                dir_diffs "$directory"
+            done
+        fi
+    fi
+fi
+
+echo "Done."

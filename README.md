@@ -27,7 +27,17 @@ wget https://raw.githubusercontent.com/demivi/PKGBUILDs/master/cpw/PKGBUILD && \
 makepkg -si
 ```
 
+You can also use the install script as described bellow.
+
 ### Other distros
+
+#### Install script
+
+You can use the install script which will copy cpw files to the appropriate directories.
+
+It will also act as an update script. So if you want to update, download a new release of cpw (or pull from the repository) and rerun the install script.
+
+#### Manual installation
 
 Clone the repository and make sure only root has write access to every file. Create a script in your $PATH that changes directory to where cpw is located and executes it with the provided arguments.
 
