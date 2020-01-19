@@ -165,7 +165,7 @@ recursive_build () {
     if [[ "$local_image" = true ]]; then
         local parent=$(grep '^FROM' "$2"/Dockerfile | awk '{print $2}')
         local old_parent_ID=$(docker images -qf reference="$parent" | head -n 1)
-        local stored_parent_ID=$(grep "parent_of_$2" IMAGE_ID_FILE | \
+        local stored_parent_ID=$(grep -s "parent_of_$2" IMAGE_ID_FILE | \
                                  cut -d ";" -f1)
 
         recursive_build "$1" "$parent" "${@:3}"
@@ -186,7 +186,8 @@ recursive_build () {
 
         # If the image is local we use the stored ID
         if [[ "$local_image" = true ]]; then
-            build_ID=$(grep "last_build_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
+            build_ID=$(grep -s "last_build_of_$2" IMAGE_ID_FILE | \
+                       cut -d ";" -f1)
         else
             build_ID=$(docker images -q "$2" | head -n 1)
         fi
@@ -236,7 +237,7 @@ update_check () {
     check_image_existence "$2"
 
     # We get a timestamp of the last build for this image
-    build_ID=$(grep "last_build_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
+    build_ID=$(grep -s "last_build_of_$2" IMAGE_ID_FILE | cut -d ";" -f1)
     last_build=$(docker inspect --format '{{.Created}}' "$build_ID" | \
                  head -n 1)
     last_build=$(date -d "$last_build" +%s)
