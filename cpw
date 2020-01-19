@@ -157,6 +157,8 @@ recursive_build () {
     if $(docker-compose --log-level ERROR config --services | \
          grep "^$2$" -q); then
         local local_image=true
+    else
+        local local_image=false
     fi
 
     local build_needed=false
