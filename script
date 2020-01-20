@@ -137,10 +137,16 @@ if [[ "$event" = "init" ]]; then
         BUILD_ARGS=( "--force-rm" )
     fi
 
-    # Force update when running 'cpw run' but don't touch parents.
+    # Force update when running 'cpw run' but don't rebuild anything.
     if [[ " ${@:4} " =~ " -u " ]]; then
-        MAX_AGE=0
-        PARENT_MAX_AGE=9999
+        UPDATE_DAYS=0
+        REBUILD_DAYS=9999
+    fi
+
+    # Skip any rebuild or update.
+    if [[ " ${@:4} " =~ " -s " ]]; then
+        UPDATE_DAYS=9999
+        REBUILD_DAYS=9999
     fi
 
 ######################################!!!!######################################
