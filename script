@@ -122,12 +122,18 @@ if [[ "$event" = "init" ]]; then
         containers=$(docker ps -aqf "name=cpw_$service")
 
         if [[ -n "$containers" && \
-            "$cpw_command" =~ ^.*run$ || "$cpw_command" = "update" ]]; then
+            "$cpw_command" =~ ^.*run$ || "$cpw_command" = "build" ]]; then
             for container in $containers; do
                 source ./script stop "${@:2}"
                 docker rm "$container"
             done
         fi
+    fi
+
+    # This forces a build when 'cpw build' is used, even if the image has not
+    # expired.
+    if [[ "$cpw_command" = "build" ]]; then
+        REBUILD_DAYS=0
     fi
 
     # Here is an example of BUILD_ARGS change with a custom cpw parameter. The
