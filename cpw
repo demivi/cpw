@@ -383,7 +383,7 @@ do_edit () {
         check_service_existence "$1"
 
         "${EDITOR:-vi}" "$1"/Dockerfile
-        echo "Run 'cpw build $1' if you want changes to take effect"
+        echo "Note: Changes won't take effect until next rebuild"
     else
         "${EDITOR:-vi}" docker-compose.yml
     fi
