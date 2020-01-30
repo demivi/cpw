@@ -154,7 +154,7 @@ perform_build () {
 
 # Recursively build or pull images by going from the top parent
 recursive_build () {
-    if $(docker-compose --log-level ERROR config --services | \
+    if $(docker-compose "${COMPOSE_OPTS[@]}" config --services | \
          grep "^$2$" -q); then
         local local_image=true
     else
