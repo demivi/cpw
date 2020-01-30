@@ -58,14 +58,8 @@ get_children () {
 
     # Get a list of images that are children of the input service
     for image in $images; do
-        if [[ $image != "$1" ]]; then
-            if $(docker history $image | grep "$2" -q); then
-                children+=($image)
-            fi
-        else
-            if $(docker history -q $image | tail -n +2 | grep "$2" -q); then
-                children+=($image)
-            fi
+        if $(docker history -q $image | tail -n +2 | grep "$2" -q); then
+            children+=($image)
         fi
     done
 }
