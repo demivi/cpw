@@ -106,7 +106,7 @@ remove_containers () {
 # Takes image name as first argument, image ID as second
 store_image_ID () {
     if $(grep -sq "last_build_of_$1" IMAGE_ID_FILE); then
-        sed -i "s/.*last_build_of_$1/$2;last_build_of_$1/" IMAGE_ID_FILE
+        sed -i "s/.*last_build_of_$1/$2\;last_build_of_$1/" IMAGE_ID_FILE
     else
         echo "$2;last_build_of_$1" >> IMAGE_ID_FILE
     fi
@@ -115,7 +115,7 @@ store_image_ID () {
     parent_ID=$(docker images -qf reference="$parent")
 
     if $(grep -sq "parent_of_$1" IMAGE_ID_FILE); then
-        sed -i "s/.*parent_of_$1/$parent_ID;parent_of_$1/" IMAGE_ID_FILE
+        sed -i "s/.*parent_of_$1/$parent_ID\;parent_of_$1/" IMAGE_ID_FILE
     else
         echo "$parent_ID;parent_of_$1" >> IMAGE_ID_FILE
     fi
