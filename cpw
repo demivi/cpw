@@ -52,11 +52,12 @@ get_children () {
     children=()
 
     # Get a list of local images associated with compose services
-    images=$(comm -12 \
+    local images=$(comm -12 \
         <(docker images --format "{{.Repository}}" | sort) \
         <(docker-compose "${COMPOSE_OPTS[@]}" config --services | sort))
 
     # Get a list of images that are children of the input service
+    local image
     for image in $images; do
         if $(docker history -q $image | tail -n +2 | grep "$2" -q); then
             children+=($image)
@@ -66,15 +67,15 @@ get_children () {
 
 # Takes a service name as argument
 remove_containers () {
-    containers=$(docker ps -aqf "name=cpw_$2")
+    local containers=$(docker ps -aqf "name=cpw_$2")
 
     if [[ -n "$containers" ]]; then
         echo "These containers are based on $2:"
-        ls_string="ID;CREATED AT;STATUS\n"
+        local ls_string="ID;CREATED AT;STATUS\n"
 
         # Format a list of containers based on input service
         for container in $containers; do
-            container_status=$(docker ps -a \
+            local container_status=$(docker ps -a \
                 --format "{{.ID}};{{.CreatedAt}};{{.Status}}" \
                 -f id="$container")
             ls_string="$ls_string$container_status\n"
@@ -105,8 +106,8 @@ store_image_ID () {
         echo "$2;last_build_of_$1" >> IMAGE_ID_FILE
     fi
 
-    parent=$(grep '^FROM' "$1"/Dockerfile | awk '{print $2}')
-    parent_ID=$(docker images -qf reference="$parent")
+    local parent=$(grep '^FROM' "$1"/Dockerfile | awk '{print $2}')
+    local parent_ID=$(docker images -qf reference="$parent")
 
     if $(grep -sq "parent_of_$1" IMAGE_ID_FILE); then
         sed -i "s/.*parent_of_$1/$parent_ID\;parent_of_$1/" IMAGE_ID_FILE
@@ -116,12 +117,12 @@ store_image_ID () {
 }
 
 perform_build () {
-    old_image_ID=$(docker images -qf reference="$2")
+    local old_image_ID=$(docker images -qf reference="$2")
     
     echo -e "\n\n################////////\nBuilding $2"
     source ./script build "$@"
 
-    new_image_ID=$(docker images -qf reference="$2")
+    local new_image_ID=$(docker images -qf reference="$2")
 
     if [[ -z "$old_image_ID" ]] && [[ -z "$new_image_ID" ]]; then
         echo "Something went wrong with the build of $2"
