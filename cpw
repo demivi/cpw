@@ -306,6 +306,19 @@ do_ls () {
     fi
 }
 
+do_build () {
+    check_service_existence "$2"
+
+    local old_image_ID=$(docker images -qf reference="$2")
+    recursive_build "$@"
+    local new_image_ID=$(docker images -qf reference="$2")
+
+    # We force a build if none was triggered by recursive_build
+    if [[ "$new_image_ID" = "$old_image_ID" ]]; then
+        perform_build "$@"
+    fi
+}
+
 do_run () {
     check_service_existence "$2"
     source ./script exec "$@"
@@ -400,7 +413,7 @@ case "$1" in
         ;;
 
     build)
-        recursive_build "$@"
+        do_build "$@"
         ;;
 
     run)

@@ -130,12 +130,6 @@ if [[ "$event" = "init" ]]; then
         fi
     fi
 
-    # This forces a build when 'cpw build' is used, even if the image has not
-    # expired.
-    if [[ "$cpw_command" = "build" ]]; then
-        REBUILD_DAYS=0
-    fi
-
     # Here is an example of BUILD_ARGS change with a custom cpw parameter. The
     # '--no-cache' argument as been removed so running 'cpw run' or 'cpw build'
     # with the '-c' flag will build images using cached layers.
