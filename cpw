@@ -145,6 +145,23 @@ perform_build () {
             docker rmi "$old_image_ID"
         fi
     fi
+
+    # If the parent is a remote image and is not used anymore, we remove it
+    local parent=$(grep '^FROM' "$2"/Dockerfile | \
+                   awk '{print $2}'| cut -d ":" -f1)
+
+    if ! $(docker-compose "${COMPOSE_OPTS[@]}" config --services | \
+           grep "^$parent$" -q); then
+        local images=$(docker images -qf reference= "$parent")
+
+        # We only remove images if they do not have children
+        for image in $images; do
+            get_children "$parent" "$image"
+            if [[ ${#children[@]} -eq 0 ]]; then
+                docker rmi "$image"
+            fi
+        done
+    fi
 }
 
 # Recursively build or pull images by going from the top parent
@@ -186,7 +203,7 @@ recursive_build () {
             build_ID=$(grep -s "last_build_of_$2" IMAGE_ID_FILE | \
                        cut -d ";" -f1)
         else
-            build_ID=$(docker images -q "$2" | head -n 1)
+            build_ID=$(docker images -qf reference="$2" | head -n 1)
         fi
         last_build=$(docker inspect --format '{{.Created}}' "$build_ID" | \
                      head -n 1)
@@ -214,16 +231,6 @@ recursive_build () {
             if [[ $? != 0 ]]; then
                 echo "Could not pull image: $2"
                 exit 1
-            else
-                images=$(docker images -q "$2")
-
-                # We check if we can remove unused remote images
-                for image in $images; do
-                    get_children "$2" "$image"
-                    if [[ ${#children[@]} -eq 0 ]]; then
-                        docker rmi "$image"
-                    fi
-                done
             fi
         fi
     fi
