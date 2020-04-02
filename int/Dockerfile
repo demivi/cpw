@@ -3,14 +3,11 @@ FROM base
 RUN pacman -Syu --noconfirm && \
     pacman -S \
         bettercap \
-        crackmapexec \
-        empire \
+        crackmapextreme \
         enum4linux \
         impacket \
         metasploit \
         nmap \
+        rdp-screenshotter \
         responder \
     --noconfirm --needed
-
-# Empire specifics
-RUN echo "dB9hiWTPX3VTN0ljCXpm" | empire-setup
