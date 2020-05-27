@@ -21,7 +21,7 @@ RUN echo $'\n[archstrike]\nServer = https://mirror.archstrike.org/$arch/$repo' >
 
 # Setup BlackArch repository (https://blackarch.org/downloads.html)
 RUN curl -O https://blackarch.org/strap.sh && \
-    if [[ "$(sha1sum strap.sh | cut -d " " -f1)" = "9f770789df3b7803105e5fbc19212889674cd503" ]];then chmod +x strap.sh && ./strap.sh; fi
+    if [[ "$(sha1sum strap.sh | cut -d " " -f1)" = "9c15f5d3d6f3f8ad63a6927ba78ed54f1a52176b" ]];then chmod +x strap.sh && ./strap.sh; fi
 
 # Setup mcar repository
 RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/demivi/PKGBUILDs/releases/download/current/' /etc/pacman.conf
