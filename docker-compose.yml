@@ -4,6 +4,7 @@ x-common: &common
     network_mode: host
     volumes:
         - ${VOLUME_DIRECTORY}:/volume
+        - /etc/localtime:/etc/localtime:ro
     environment:
         - COLUMNS
         - LINES
