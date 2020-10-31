@@ -4,9 +4,11 @@ RUN pacman -Syu --noconfirm && \
     pacman -S \
         arjun \
         dirb \
-        blackarch/ffuf \
+        ffuf \
         nikto \
         nmap \
+        nuclei \
+        nuclei-templates \
         sqlmap \
         testssl.sh \
         wafw00f \
