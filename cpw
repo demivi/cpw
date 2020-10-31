@@ -6,22 +6,22 @@ fi
 
 # Help string can be overwritten in the cpw script
 HELP_STRING="
-Usage: cpw {run|rm|rerun|edit|update|build|new|start|stop} <service>
+Usage: cpw {run|rm|rerun|edit|update|build|new|start|exec|commit|stop} <profile>
    or: cpw {ls|edit|script}
 
-    -ls: list services and check which of them have existing images
-    -run: start a new service; will build or update images if necessary
-    -rm: remove a service image
+    -ls: list profiles and check which of them have existing images
+    -run: start a new profile; will build or update images if necessary
+    -rm: remove a profile image
     -rerun: shortcut to rm then run
-    -edit: edit existing service; give no argument to edit compose file
-    -update: manually update service image
-    -build: manually build service image
-    -new: create new profile
+    -edit: edit existing profile; give no argument to edit compose file
+    -update: manually update profile image
+    -build: manually build profile image
+    -new: create new profile (opens both, the docker-compose file and a new Dockerfile)
     -start: start a container if '--rm' has been removed from run arguments
-    -exec: execute command on running container (default: bash)
-    -commit: commit an existing container into the new image for a service
+    -exec: execute a command on a running container (default: bash)
+    -commit: commit an existing container into the new profile image
     -stop: stop a running container
-    -script: edit cpw script
+    -script: edit cpw script (cpw configuration and hooks code)
 "
 
 IMAGE_ID_FILE='image_IDs'
