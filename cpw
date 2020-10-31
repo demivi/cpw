@@ -252,7 +252,7 @@ update_check () {
         # We check if rebuilds are disabled for this service
         if [[ " ${DISABLED_REBUILDS[@]} " =~ " $2 " ]]; then
             echo "Rebuilds are disabled for $2"
-        elif
+        else
             recursive_build "$@"
         fi
     else
