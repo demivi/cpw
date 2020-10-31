@@ -9,6 +9,7 @@ x-common: &common
         - COLUMNS
         - LINES
         - EDITOR
+        - HOSTNAME
 
 # If you ever connect to a local network whose IP address range overlaps with
 # the default docker0 bridge configuration (172.17.0.0/16), you should change
@@ -36,8 +37,12 @@ services:
         <<: *common
         environment:
             - DISPLAY
+            - HOSTNAME
+            - _JAVA_AWT_WM_NONREPARENTING=1
         volumes:
-            - /home/$SUDO_USER/.Xauthority:/root/.Xauthority:ro
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - ${XAUTHORITY}:/root/.Xauthority:ro
+            - ${VOLUME_DIRECTORY}:/volume
     ext:
         build: ./ext
         image: ext
