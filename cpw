@@ -228,7 +228,7 @@ recursive_build () {
         else
             # Remote image, we pull
             docker pull "$2"
-            if [[ $? != 0 ]]; then
+            if [[ $? -ne 0 ]]; then
                 echo "Could not pull image: $2"
                 exit 1
             fi
@@ -249,7 +249,12 @@ update_check () {
 
     # We check if the image needs to be rebuilt
     if [[ "$last_build" -lt "$max_build_age" ]]; then
-        recursive_build "$@"
+        # We check if rebuilds are disabled for this service
+        if [[ " ${DISABLED_REBUILDS[@]} " =~ " $2 " ]]; then
+            echo "Rebuilds are disabled for $2"
+        elif
+            recursive_build "$@"
+        fi
     else
         # If it does not, we check if it needs an update
         image_age=$(docker inspect --format '{{.Created}}' "$2" | \
