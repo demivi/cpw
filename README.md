@@ -1,17 +1,19 @@
 # cpw
 
-A ComPose Wrapper for simple Docker image management.
+A ComPose Wrapper for simple Docker image management through the command line.
 
 This tools could help you if you often find yourself tired of micro-managing a bunch of Docker images/containers on your machine.
 
-It basically takes away the native Docker commands clutter by leaning on Docker Compose and adding some convenient features on top of that.
+This is **not** a production tool you would have on a server to run a bunch of applications, it's not meant to replace Swarm or Kubernetes.
+
+It's more about quick and dirty Docker manipulations. It basically takes away the native Docker commands clutter by leaning on Docker Compose and adding some convenient features on top of that.
 
 Stuff cpw can do:
 - Reduce building, running and updating images to one command: `cpw run <profile>`
 - Fully customizable via scripting, for example:
-    - For profile A, fetch a file on a private repository before building, and prompt for my password.
+    - For profile A, fetch a file on a private repository before building, and prompt for a password.
     - For profile B, try to update every time I run a container, as opposed to the monthly update configured for the other profiles.
-    - For profile C, cleanup all files older than a month in the logs volume every time un use the profile.
+    - For profile C, cleanup all files older than a month in the logs volume every time I use the profile.
     - For profile D, setup some specific firewall rules on my host at startup, restore them when I stop the container.
     - For profile E, setup a wifi access point and redirect all its traffic to a local proxy for HTTP analysis.
     - For profile F, modify the container Cgroups after startup to allow access to USB ports without relying on --privileged.
@@ -23,7 +25,7 @@ Stuff cpw can do:
     - Doing `cpw run ext` will check/build/update every image in the chain and start a container for `ext`.
     - This makes it easier to split dependencies amongst different profiles and thus reducing rebuild and update times for individual profiles.
 
-My need for this tool arose when I started to use Docker to manage my pentest tools by engagement typologies. The idea was to have a clean, updated and isolated environment on each new engagement. I ended up using it for a bunch more stuff, like running multiple VPNs at the same time with separated network namespaces, quick prototyping with images from the Docker hub, a bit of dev work, updating tools on my Arch Linux repository...
+My need for this tool arose when I started to use Docker to manage my pentest tools by engagement typologies. The idea was to have a clean, updated and isolated environment on each new engagement. I ended up using it for a bunch more stuff, like running multiple VPNs at the same time with separated network namespaces, quick prototyping with images from the Docker hub, a bit of dev work, running postgres, updating tools on my Arch Linux repository...
 
 The tool is packaged with example profiles based on Arch Linux to get you started, but you can ditch everything and create new profiles from scratch.
 
