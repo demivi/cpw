@@ -1,4 +1,4 @@
-FROM archlinux/base
+FROM archlinux
 
 # Get a list of mirrors from archlinux.org, change country to fit your needs
 RUN curl -s "https://archlinux.org/mirrorlist/?country=FR&protocol=https&use_mirror_status=on" | sed -e 's/^#Server/Server/' -e '/^#/d' > /etc/pacman.d/mirrorlist
