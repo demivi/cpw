@@ -82,11 +82,6 @@ if [[ "$event" = "init" ]]; then
     # 'cpw run' or 'cpw build' commands.
     REBUILD_DAYS=60
     
-    # This is an example of a volume variable which can be used by
-    # docker-compose.yml and in this script. It needs to be exported to be
-    # visible by docker-compose.
-    export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
-
     # Use this array to specify the docker-compose options (docker-compose -h
     # for more info).
     COMPOSE_OPTS=( "--log-level" "ERROR" )
@@ -101,12 +96,19 @@ if [[ "$event" = "init" ]]; then
     # containers from failed builds behind.
     BUILD_ARGS=( "--force-rm" "--no-cache" )
 
-    # Preemptively creating your volume directories will allow you to set their
-    # permissions. If you let docker-compose create them they will be owned by
-    # root.
-    if [[ ! -d "$VOLUME_DIRECTORY" ]]; then
-        mkdir -p "$VOLUME_DIRECTORY"
-        chown "$SUDO_USER" "$VOLUME_DIRECTORY"
+    if [[ -n "$SUDO_USER" ]]; then
+        # This is an example of a volume variable which can be used by
+        # docker-compose.yml and in this script. It needs to be exported to be
+        # visible by docker-compose.
+        export VOLUME_DIRECTORY=/home/$SUDO_USER/volume
+
+        # Preemptively creating your volume directories will allow you to set
+        # their permissions. If you let docker-compose create them they will be
+        # owned by root.
+        if [[ ! -d "$VOLUME_DIRECTORY" ]]; then
+            mkdir -p "$VOLUME_DIRECTORY"
+            chown "$SUDO_USER" "$VOLUME_DIRECTORY"
+        fi
     fi
 
     # Here is an example of how you could change the default behavior for a
