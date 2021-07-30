@@ -24,8 +24,9 @@ networks:
         ipam:
             driver: default
 
-# cpw assumes service names are used as image names
-# configuring otherwise here will break cpw
+# Cpw assumes service names are used as image names.
+# Configuring otherwise here will break cpw.
+# Using image names that exist on the hub is not supported.
 services:
     base:
         build: ./base
