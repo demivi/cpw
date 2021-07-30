@@ -8,7 +8,7 @@ RUN pacman -Syu --noconfirm && \
 
 # Setup BlackArch repository (https://blackarch.org/downloads.html)
 RUN curl -O https://blackarch.org/strap.sh && \
-    if [[ "$(sha1sum strap.sh | cut -d " " -f1)" = "d062038042c5f141755ea39dbd615e6ff9e23121" ]]; then chmod +x strap.sh && ./strap.sh; else echo 'Error: Wrong BlackArch SHA1' && exit 1; fi
+    if [[ "$(sha1sum strap.sh | cut -d " " -f1)" = "edf8a85057ea49dce21eea429eb270535f3c5f9a" ]]; then chmod +x strap.sh && ./strap.sh; else echo 'Error: Wrong BlackArch SHA1' && exit 1; fi
 
 # Setup mcar repository
 RUN sed -i '1i[mcar]\nSigLevel = PackageOptional\nServer = https://github.com/demivi/PKGBUILDs/releases/download/current/' /etc/pacman.conf
